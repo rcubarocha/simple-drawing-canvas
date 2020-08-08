@@ -5,10 +5,13 @@ export class RGBColor {
 
     blue: number;
 
-    constructor(red: number, green: number, blue: number) {
+    alpha: number;
+
+    constructor(red: number, green: number, blue: number, alpha: number = 1.0) {
       this.red = red;
       this.green = green;
       this.blue = blue;
+      this.alpha = alpha;
     }
 
     static paddedHex(value: number): string {
@@ -18,7 +21,7 @@ export class RGBColor {
     }
 
     toHex(): string {
-      return `#${RGBColor.paddedHex(this.red)}${RGBColor.paddedHex(this.green)}${RGBColor.paddedHex(this.blue)}`;
+      return `#${RGBColor.paddedHex(this.red)}${RGBColor.paddedHex(this.green)}${RGBColor.paddedHex(this.blue)}${RGBColor.paddedHex(Math.trunc(this.alpha * 255))}`;
     }
 }
 
