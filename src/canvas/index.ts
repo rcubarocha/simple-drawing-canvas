@@ -63,7 +63,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
     // boundMouseCallback = this.onCanvasEvent.bind(this);
     // boundTouchCallback = this.onTouchEvent.bind(this);
 
-    canvasFocusCallback = (e: TouchEvent) => {
+    canvasFocusCallback(e: TouchEvent) {
       if (e.target === this.canvasElement) {
         e.preventDefault();
       }
@@ -88,11 +88,17 @@ export class DrawingCanvasController implements IDrawingCanvas {
       this.width = width;
       this.height = height;
 
+      this.canvasFocusCallback = this.canvasFocusCallback.bind(this);
+      this.onCanvasEvent = this.onCanvasEvent.bind(this);
+      this.onTouchEvent = this.onTouchEvent.bind(this);
+      this.onWindowResize = this.onWindowResize.bind(this);
+
       this.initCanvas();
     }
 
-    // eslint-disable-next-line class-methods-use-this
-    drawLine(ctx: CanvasRenderingContext2D, from: ICoords, to: ICoords, width: number, color: string) {
+    drawLine(from: ICoords, to: ICoords, width: number, color: string) {
+      const ctx = this.canvasElement.getContext('2d')!;
+
       ctx.beginPath();
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -111,7 +117,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
         case 'pen':
           ctx.globalCompositeOperation = 'source-over';
 
-          this.drawLine(ctx, action.start!, action.end!, action.size!, action.color!);
+          this.drawLine(action.start!, action.end!, action.size!, action.color!);
           break;
         case 'clear':
 
@@ -128,7 +134,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
         case 'eraser':
           ctx.globalCompositeOperation = 'destination-out';
 
-          this.drawLine(ctx, action.start!, action.end!, action.size!, '#ffffff');
+          this.drawLine(action.start!, action.end!, action.size!, '#ffffff');
           break;
         default:
           break;
@@ -316,13 +322,13 @@ export class DrawingCanvasController implements IDrawingCanvas {
       }, 5);
     }
 
-    onCanvasEvent = (e: MouseEvent) => {
+    onCanvasEvent(e: MouseEvent) {
         // console.log('-- On Canvas Event --');
         // console.log({ type: e.type, target: e.target, current: e.currentTarget });
         this.toolFuncs.get(this.toolType)!(e);
     }
 
-    onTouchEvent = (e: TouchEvent) => {
+    onTouchEvent(e: TouchEvent) {
       // console.log('-- On Touch Event --');
       // console.log({ type: e.type, target: e.target, current: e.currentTarget });
 
@@ -355,7 +361,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
       // }
     }
 
-    onWindowResize = () => {
+    onWindowResize() {
       this.scale = this.width / this.canvasElement.offsetWidth;
 
       this.canvasElement.style.height = `${this.height / this.scale}px`;
