@@ -27,9 +27,14 @@ interface IDrawingCanvas {
     brushColor: RGBColor,
     lastCoords: ICoords,
     toolDown: boolean,
-    actionsHistory: CanvasAction[],
+    actionsHistory: CanvasAction[][],
+    undoHistory: CanvasAction[][],
     historyIndex: number,
+    actionIndex: number,
     initCanvas(): void,
+    teardown(): void,
+    undo(redraw?: boolean): void,
+    redo(redraw?: boolean): void,
 }
 
 type MouseEventCallback = (e: MouseEvent) => void;
@@ -56,9 +61,13 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
     toolDown: boolean = false;
 
-    actionsHistory: CanvasAction[] = [];
+    actionsHistory: CanvasAction[][] = [];
+
+    undoHistory: CanvasAction[][] = [];
 
     historyIndex: number = 0;
+
+    actionIndex: number = 0;
 
     // boundMouseCallback = this.onCanvasEvent.bind(this);
     // boundTouchCallback = this.onTouchEvent.bind(this);
@@ -147,6 +156,8 @@ export class DrawingCanvasController implements IDrawingCanvas {
         const { x, y } = this.canvasElement.getBoundingClientRect();
         this.lastCoords.x = (e.clientX - x) * this.scale;
         this.lastCoords.y = (e.clientY - y) * this.scale;
+
+        this.startNewAction();
       } else if (e.type === 'mousemove') {
         if (!this.toolDown) return;
 
@@ -165,7 +176,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
           color: this.brushColor.toHex(),
         };
 
-        this.actionsHistory.push(action);
+        this.actionsHistory[this.actionsHistory.length - 1].push(action);
 
         this.performCanvasAction(action);
 
@@ -189,7 +200,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
             color: this.brushColor.toHex(),
           };
 
-          this.actionsHistory.push(action);
+          this.actionsHistory[this.actionsHistory.length - 1].push(action);
 
           this.performCanvasAction(action);
 
@@ -203,6 +214,8 @@ export class DrawingCanvasController implements IDrawingCanvas {
     clearTool(e: MouseEvent) {
       if (e.type === 'mousedown') {
         this.toolDown = true;
+
+        this.startNewAction();
       } else if (e.type === 'mouseup') {
         if (!this.toolDown) return;
 
@@ -210,7 +223,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
         if (e.target === this.canvasElement) {
           const action: CanvasAction = { tool: 'clear' };
 
-          this.actionsHistory.push(action);
+          this.actionsHistory[this.actionsHistory.length - 1].push(action);
 
           this.performCanvasAction(action);
         }
@@ -222,19 +235,18 @@ export class DrawingCanvasController implements IDrawingCanvas {
     bucketTool(e: MouseEvent) {
       if (e.type === 'mousedown') {
         this.toolDown = true;
+
+        this.startNewAction();
       } else if (e.type === 'mouseup') {
         if (!this.toolDown) return;
 
         // Only clear the canvas if the click release happens inside the canvas
         if (e.target === this.canvasElement) {
-          // const action: CanvasAction = { tool: 'bucket', color: this.brushColor.toHex() };
+          const action: CanvasAction = { tool: 'bucket', color: this.brushColor.toHex() };
 
-          // this.actionsHistory.push(action);
+          this.actionsHistory[this.actionsHistory.length - 1].push(action);
 
-          // this.performCanvasAction(action);
-
-          // this.playDrawing();
-          this.performAllCanvasActions();
+          this.performCanvasAction(action);
         }
 
         this.toolDown = false;
@@ -247,6 +259,8 @@ export class DrawingCanvasController implements IDrawingCanvas {
         const { x, y } = this.canvasElement.getBoundingClientRect();
         this.lastCoords.x = (e.clientX - x) * this.scale;
         this.lastCoords.y = (e.clientY - y) * this.scale;
+
+        this.startNewAction();
       } else if (e.type === 'mousemove') {
         if (!this.toolDown) return;
 
@@ -261,7 +275,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
           tool: 'eraser', start: { ...this.lastCoords }, end: { ...newCoords }, size: this.brushSize,
         };
 
-        this.actionsHistory.push(action);
+        this.actionsHistory[this.actionsHistory.length - 1].push(action);
 
         this.performCanvasAction(action);
 
@@ -281,7 +295,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
             tool: 'eraser', start: { ...this.lastCoords }, end: { ...newCoords }, size: this.brushSize,
           };
 
-          this.actionsHistory.push(action);
+          this.actionsHistory[this.actionsHistory.length - 1].push(action);
 
           this.performCanvasAction(action);
 
@@ -292,31 +306,72 @@ export class DrawingCanvasController implements IDrawingCanvas {
       }
     }
 
+    startNewAction() {
+      this.actionsHistory.push([]);
+
+      // Clear Undo history when a new action is started
+      this.undoHistory = [];
+    }
+
+    undo(redraw: boolean = true) {
+      const lastAction = this.actionsHistory.pop();
+
+      if (lastAction) {
+        this.undoHistory.push(lastAction);
+      }
+
+      if (redraw) {
+        this.performAllCanvasActions();
+      }
+    }
+
+    redo(redraw: boolean = true) {
+      const lastUndo = this.undoHistory.pop();
+
+      if (lastUndo) {
+        this.actionsHistory.push(lastUndo);
+      }
+
+      if (redraw) {
+        this.performAllCanvasActions();
+      }
+    }
+
     performAllCanvasActions() {
       const action: CanvasAction = { tool: 'clear' };
 
       this.performCanvasAction(action);
 
-      this.actionsHistory.pop();
-
       this.actionsHistory.forEach((ca) => {
-        this.performCanvasAction(ca);
+        ca.forEach((cai) => {
+          this.performCanvasAction(cai);
+        });
       });
     }
 
     playDrawing() {
+      if (this.actionsHistory.length < 1) {
+        return;
+      }
+
       const action: CanvasAction = { tool: 'clear' };
 
       this.performCanvasAction(action);
 
       this.historyIndex = 0;
+      this.actionIndex = 0;
 
       const interval = setInterval(() => {
-        if (this.actionsHistory.length > 0) this.performCanvasAction(this.actionsHistory[this.historyIndex]!);
+        this.performCanvasAction(this.actionsHistory[this.historyIndex][this.actionIndex]!);
 
-        if (this.historyIndex < this.actionsHistory.length - 1) {
+        this.actionIndex += 1;
+
+        if (this.actionIndex >= this.actionsHistory[this.historyIndex].length) {
           this.historyIndex += 1;
-        } else {
+          this.actionIndex = 0;
+        }
+
+        if (this.historyIndex >= this.actionsHistory.length) {
           clearInterval(interval);
         }
       }, 5);
@@ -350,15 +405,6 @@ export class DrawingCanvasController implements IDrawingCanvas {
       if (doc && touchEndElement) {
         touchEndElement.dispatchEvent(me);
       }
-
-      // if (e.type === 'touchend' || e.type === 'touchcancel') {
-      //     this.canvasElement.ownerDocument!.dispatchEvent(me);
-      //     console.log('Dispathcing MouseUP from TouchEnd/Cancel')
-      //     // this.canvasElement.dispatchEvent(me);
-      // }
-      // else {
-      //     this.canvasElement.dispatchEvent(me);
-      // }
     }
 
     onWindowResize() {
