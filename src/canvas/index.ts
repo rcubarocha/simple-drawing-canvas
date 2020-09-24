@@ -31,10 +31,12 @@ interface IDrawingCanvas {
     undoHistory: CanvasAction[][],
     historyIndex: number,
     actionIndex: number,
+    background: HTMLImageElement | null,
     initCanvas(): void,
     teardown(): void,
     undo(redraw?: boolean): void,
     redo(redraw?: boolean): void,
+    setBackground(url: string): void,
 }
 
 type MouseEventCallback = (e: MouseEvent) => void;
@@ -69,6 +71,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
     actionIndex: number = 0;
 
+    background: HTMLImageElement | null = null;
     // boundMouseCallback = this.onCanvasEvent.bind(this);
     // boundTouchCallback = this.onTouchEvent.bind(this);
 
@@ -133,6 +136,9 @@ export class DrawingCanvasController implements IDrawingCanvas {
           ctx.globalCompositeOperation = 'source-over';
 
           ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
           break;
         case 'bucket':
           ctx.globalCompositeOperation = 'source-over';
@@ -342,6 +348,10 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
       this.performCanvasAction(action);
 
+      if (this.background) {
+        this.setBackgroundFromElement(this.background);
+      }
+
       this.actionsHistory.forEach((ca) => {
         ca.forEach((cai) => {
           this.performCanvasAction(cai);
@@ -413,6 +423,34 @@ export class DrawingCanvasController implements IDrawingCanvas {
       this.canvasElement.style.height = `${this.height / this.scale}px`;
     }
 
+
+    setBackground(url: string) {
+      const temp = new Image();
+      temp.crossOrigin = 'Anonymous';
+      temp.onload = () => {
+        this.setBackgroundFromElement(temp);
+      };
+
+      temp.src = url;
+
+      this.background = temp;
+    }
+
+    setBackgroundFromElement(img: HTMLImageElement) {
+      const ctx = this.canvasElement.getContext('2d')!;
+
+      ctx.drawImage(img, 0, 0, this.canvasElement.width, this.canvasElement.height);
+    }
+
+    setBackgroundColor(color: string) {
+      const ctx = this.canvasElement.getContext('2d')!;
+
+      ctx.globalCompositeOperation = 'source-over';
+
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+    }
+
     reset() {
       this.actionsHistory = [];
       this.historyIndex = 0;
@@ -421,6 +459,8 @@ export class DrawingCanvasController implements IDrawingCanvas {
         y: 0,
       };
       this.toolDown = false;
+
+      this.setBackgroundColor('#ffffff');
     }
 
     teardown() {
@@ -451,6 +491,8 @@ export class DrawingCanvasController implements IDrawingCanvas {
       this.canvasElement.height = this.height;
 
       const w = this.canvasElement.ownerDocument!.defaultView;
+
+      this.setBackgroundColor('#ffffff');
 
       // w && (w.onresize = this.onWindowResize);
       if (w) {
