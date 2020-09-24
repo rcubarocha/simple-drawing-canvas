@@ -36,6 +36,7 @@ interface IDrawingCanvas {
     teardown(): void,
     undo(redraw?: boolean): void,
     redo(redraw?: boolean): void,
+    getDataURL(type?: string | undefined, quality?: any): string
     setBackground(url: string): void,
 }
 
@@ -423,6 +424,9 @@ export class DrawingCanvasController implements IDrawingCanvas {
       this.canvasElement.style.height = `${this.height / this.scale}px`;
     }
 
+    getDataURL(type?: string | undefined, quality?: any) {
+      return this.canvasElement.toDataURL(type, quality);
+    }
 
     setBackground(url: string) {
       const temp = new Image();
