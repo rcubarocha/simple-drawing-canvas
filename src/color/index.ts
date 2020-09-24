@@ -14,6 +14,16 @@ export class RGBColor {
       this.alpha = alpha;
     }
 
+    static fromHex(hex: string): RGBColor {
+      const stripped = hex.split('#')[1];
+
+      const rs = stripped.substr(0, 2);
+      const gs = stripped.substr(2, 2);
+      const bs = stripped.substr(4, 2);
+
+      return new RGBColor(parseInt(rs, 16), parseInt(gs, 16), parseInt(bs, 16));
+    }
+
     static paddedHex(value: number): string {
       const hex = value.toString(16);
 
