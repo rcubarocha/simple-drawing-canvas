@@ -11,7 +11,11 @@ export class RGBColor {
       this.red = red;
       this.green = green;
       this.blue = blue;
-      this.alpha = alpha;
+
+      let clampedAlpha = alpha > 1 ? 1 : alpha;
+      clampedAlpha = clampedAlpha < 0 ? 0 : clampedAlpha;
+
+      this.alpha = clampedAlpha;
     }
 
     static fromHex(hex: string): RGBColor {
@@ -31,7 +35,7 @@ export class RGBColor {
     }
 
     toHex(): string {
-      return `#${RGBColor.paddedHex(this.red)}${RGBColor.paddedHex(this.green)}${RGBColor.paddedHex(this.blue)}${RGBColor.paddedHex(Math.trunc(this.alpha * 255))}`;
+      return `#${RGBColor.paddedHex(this.red)}${RGBColor.paddedHex(this.green)}${RGBColor.paddedHex(this.blue)}${RGBColor.paddedHex(Math.round(this.alpha * 255))}`;
     }
 }
 
