@@ -18,7 +18,6 @@ type CanvasAction = {
 }
 
 interface IDrawingCanvas {
-    canvasElement: HTMLCanvasElement,
     width: number,
     height: number,
     scale: number,
@@ -36,14 +35,18 @@ interface IDrawingCanvas {
     teardown(): void,
     undo(redraw?: boolean): void,
     redo(redraw?: boolean): void,
-    getDataURL(type?: string | undefined, quality?: any): string
+    getDataURL: HTMLCanvasElement['toDataURL']
     setBackground(url: string): void,
 }
 
 type MouseEventCallback = (e: MouseEvent) => void;
 
 export class DrawingCanvasController implements IDrawingCanvas {
-    canvasElement: HTMLCanvasElement;
+    private canvasElement: HTMLCanvasElement;
+
+    get canvas(): HTMLCanvasElement {
+      return this.canvasElement;
+    }
 
     width: number;
 
@@ -82,19 +85,19 @@ export class DrawingCanvasController implements IDrawingCanvas {
       }
     }
 
-    static eventMap = new Map<keyof TouchEventsMap, keyof HTMLElementEventMap>([
-      ['touchstart', 'mousedown'],
-      ['touchmove', 'mousemove'],
-      ['touchend', 'mouseup'],
-      ['touchcancel', 'mouseup'],
-    ]);
+    static eventMap: { [K in keyof TouchEventsMap]: keyof HTMLElementEventMap } = {
+      touchstart: 'mousedown',
+      touchmove: 'mousemove',
+      touchend: 'mouseup',
+      touchcancel: 'mouseup',
+    }
 
-    toolFuncs = new Map<CanvasToolType, MouseEventCallback>([
-      ['pen', this.penTool.bind(this)],
-      ['clear', this.clearTool.bind(this)],
-      ['bucket', this.bucketTool.bind(this)],
-      ['eraser', this.eraserTool.bind(this)],
-    ]);
+    toolFuncs: { [K in CanvasToolType]: MouseEventCallback } = {
+      pen: this.penTool.bind(this),
+      clear: this.clearTool.bind(this),
+      bucket: this.bucketTool.bind(this),
+      eraser: this.eraserTool.bind(this),
+    }
 
     constructor(canvasElement: HTMLCanvasElement, width: number, height: number) {
       this.canvasElement = canvasElement;
@@ -389,16 +392,16 @@ export class DrawingCanvasController implements IDrawingCanvas {
     }
 
     onCanvasEvent(e: MouseEvent) {
-        // console.log('-- On Canvas Event --');
-        // console.log({ type: e.type, target: e.target, current: e.currentTarget });
-        this.toolFuncs.get(this.toolType)!(e);
+      // console.log('-- On Canvas Event --');
+      // console.log({ type: e.type, target: e.target, current: e.currentTarget });
+      this.toolFuncs[this.toolType](e);
     }
 
     onTouchEvent(e: TouchEvent) {
       // console.log('-- On Touch Event --');
       // console.log({ type: e.type, target: e.target, current: e.currentTarget });
 
-      const me = new MouseEvent(DrawingCanvasController.eventMap.get(e.type as keyof TouchEventsMap)!, {
+      const me = new MouseEvent(DrawingCanvasController.eventMap[e.type as keyof TouchEventsMap]!, {
         clientX: e.changedTouches[0].clientX,
         clientY: e.changedTouches[0].clientY,
         bubbles: true,
@@ -468,15 +471,17 @@ export class DrawingCanvasController implements IDrawingCanvas {
     }
 
     teardown() {
-      DrawingCanvasController.eventMap.forEach((_, k) => {
+      Object.keys(DrawingCanvasController.eventMap).forEach((key) => {
+        const k = key as keyof TouchEventsMap;
+
         if (k === 'touchend' || k === 'touchcancel') {
-                this.canvasElement.ownerDocument!.removeEventListener(k, this.onTouchEvent);
+          this.canvasElement.ownerDocument!.removeEventListener(k, this.onTouchEvent);
         } else {
           this.canvasElement.removeEventListener(k, this.onTouchEvent);
         }
 
-            // Prevent scrolling on touch interfaces when event occurs on canvas
-            this.canvasElement.ownerDocument!.body.removeEventListener(k, this.canvasFocusCallback, { capture: false });
+        // Prevent scrolling on touch interfaces when event occurs on canvas
+        this.canvasElement.ownerDocument!.body.removeEventListener(k, this.canvasFocusCallback, { capture: false });
       });
 
       const w = this.canvasElement.ownerDocument!.defaultView;
@@ -505,9 +510,11 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
       this.onWindowResize();
 
-      DrawingCanvasController.eventMap.forEach((_, k) => {
+      Object.keys(DrawingCanvasController.eventMap).forEach((key) => {
+        const k = key as keyof TouchEventsMap;
+
         if (k === 'touchend' || k === 'touchcancel') {
-                this.canvasElement.ownerDocument!.addEventListener(k, this.onTouchEvent);
+          this.canvasElement.ownerDocument!.addEventListener(k, this.onTouchEvent);
         } else {
           this.canvasElement.addEventListener(k, this.onTouchEvent);
         }
