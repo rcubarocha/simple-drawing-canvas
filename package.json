@@ -6,7 +6,8 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf ./dist && tsc && yarn copy-dts",
+    "build": "rm -rf ./dist && tsc",
+    "build:watch": "rm -rf ./dist && tsc -w",
     "build:types": "tsc -p tsconfig.types.json",
     "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist"
   },
