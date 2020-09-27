@@ -21,67 +21,73 @@ type CanvasAction = {
     color?: StrokeFillStyle
 }
 
-interface IDrawingCanvas {
-    width: number,
-    height: number,
-    scale: number,
-    toolType: CanvasToolType
-    brushSize: number,
-    brushColor: StrokeFillStyle,
-    lastCoords: ICoords,
-    toolDown: boolean,
-    actionsHistory: CanvasAction[][],
-    undoHistory: CanvasAction[][],
-    historyIndex: number,
-    actionIndex: number,
-    background: HTMLImageElement | null,
-    initCanvas(): void,
-    teardown(): void,
-    undo(redraw?: boolean): void,
-    redo(redraw?: boolean): void,
-    getDataURL: HTMLCanvasElement['toDataURL']
-    setBackground(url: string): void,
+interface CanvasConfig {
+  width: number,
+  height: number,
+  scale: number,
+  background: HTMLImageElement | null,
+}
+
+interface ToolConfig {
+  toolType: CanvasToolType
+  brushSize: number,
+  brushColor: StrokeFillStyle,
+  lastCoords: ICoords,
+  toolDown: boolean,
+}
+
+interface CanvasHistory {
+  actionsHistory: CanvasAction[][],
+  undoHistory: CanvasAction[][],
+  historyIndex: number,
+  actionIndex: number,
+}
+
+interface ICanvasController {
+  canvasConfig: CanvasConfig,
+  toolConfig: ToolConfig,
+  history: CanvasHistory,
+  initCanvas(): void,
+  teardown(): void,
+  undo(redraw?: boolean): void,
+  redo(redraw?: boolean): void,
+  getDataURL: HTMLCanvasElement['toDataURL']
+  setBackground(url: string): void,
 }
 
 type MouseEventCallback = (e: MouseEvent) => void;
 
-export class DrawingCanvasController implements IDrawingCanvas {
+export class DrawingCanvasController implements ICanvasController {
     private canvasElement: HTMLCanvasElement;
 
     get canvas(): HTMLCanvasElement {
       return this.canvasElement;
     }
 
-    width: number;
+    canvasConfig: CanvasConfig = {
+      width: 0,
+      height: 0,
+      scale: 1,
+      background: null,
+    }
 
-    height: number;
+    toolConfig: ToolConfig = {
+      toolType: 'pen',
+      brushSize: 5,
+      brushColor: '#000000',
+      lastCoords: {
+        x: 0,
+        y: 0,
+      },
+      toolDown: false,
+    }
 
-    scale: number = 1;
-
-    toolType: CanvasToolType = 'pen';
-
-    brushSize: number = 5;
-
-    brushColor: StrokeFillStyle = '#000000';
-
-    lastCoords: ICoords = {
-      x: 0,
-      y: 0,
-    };
-
-    toolDown: boolean = false;
-
-    actionsHistory: CanvasAction[][] = [];
-
-    undoHistory: CanvasAction[][] = [];
-
-    historyIndex: number = 0;
-
-    actionIndex: number = 0;
-
-    background: HTMLImageElement | null = null;
-    // boundMouseCallback = this.onCanvasEvent.bind(this);
-    // boundTouchCallback = this.onTouchEvent.bind(this);
+    history: CanvasHistory = {
+      actionsHistory: [],
+      undoHistory: [],
+      historyIndex: 0,
+      actionIndex: 0,
+    }
 
     canvasFocusCallback(e: TouchEvent) {
       if (e.target === this.canvasElement) {
@@ -105,8 +111,8 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
     constructor(canvasElement: HTMLCanvasElement, width: number, height: number) {
       this.canvasElement = canvasElement;
-      this.width = width;
-      this.height = height;
+      this.canvasConfig.width = width;
+      this.canvasConfig.height = height;
 
       this.canvasFocusCallback = this.canvasFocusCallback.bind(this);
       this.onCanvasEvent = this.onCanvasEvent.bind(this);
@@ -166,172 +172,172 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
     penTool(e: MouseEvent) {
       if (e.type === 'mousedown') {
-        this.toolDown = true;
+        this.toolConfig.toolDown = true;
         const { x, y } = this.canvasElement.getBoundingClientRect();
-        this.lastCoords.x = (e.clientX - x) * this.scale;
-        this.lastCoords.y = (e.clientY - y) * this.scale;
+        this.toolConfig.lastCoords.x = (e.clientX - x) * this.canvasConfig.scale;
+        this.toolConfig.lastCoords.y = (e.clientY - y) * this.canvasConfig.scale;
 
         this.startNewAction();
       } else if (e.type === 'mousemove') {
-        if (!this.toolDown) return;
+        if (!this.toolConfig.toolDown) return;
 
         const { x, y } = this.canvasElement.getBoundingClientRect();
 
         const newCoords: ICoords = {
-          x: (e.clientX - x) * this.scale,
-          y: (e.clientY - y) * this.scale,
+          x: (e.clientX - x) * this.canvasConfig.scale,
+          y: (e.clientY - y) * this.canvasConfig.scale,
         };
 
         const action: CanvasAction = {
           tool: 'pen',
-          start: { ...this.lastCoords },
+          start: { ...this.toolConfig.lastCoords },
           end: { ...newCoords },
-          size: this.brushSize,
-          color: this.brushColor,
+          size: this.toolConfig.brushSize,
+          color: this.toolConfig.brushColor,
         };
 
-        this.actionsHistory[this.actionsHistory.length - 1].push(action);
+        this.history.actionsHistory[this.history.actionsHistory.length - 1].push(action);
 
         this.performCanvasAction(action);
 
-        this.lastCoords = newCoords;
+        this.toolConfig.lastCoords = newCoords;
       } else if (e.type === 'mouseup') {
-        if (!this.toolDown) return;
+        if (!this.toolConfig.toolDown) return;
 
         if (e.target === this.canvasElement) {
           const { x, y } = this.canvasElement.getBoundingClientRect();
 
           const newCoords: ICoords = {
-            x: (e.clientX - x) * this.scale,
-            y: (e.clientY - y) * this.scale,
+            x: (e.clientX - x) * this.canvasConfig.scale,
+            y: (e.clientY - y) * this.canvasConfig.scale,
           };
 
           const action: CanvasAction = {
             tool: 'pen',
-            start: { ...this.lastCoords },
+            start: { ...this.toolConfig.lastCoords },
             end: { ...newCoords },
-            size: this.brushSize,
-            color: this.brushColor,
+            size: this.toolConfig.brushSize,
+            color: this.toolConfig.brushColor,
           };
 
-          this.actionsHistory[this.actionsHistory.length - 1].push(action);
+          this.history.actionsHistory[this.history.actionsHistory.length - 1].push(action);
 
           this.performCanvasAction(action);
 
-          this.lastCoords = newCoords;
+          this.toolConfig.lastCoords = newCoords;
         }
 
-        this.toolDown = false;
+        this.toolConfig.toolDown = false;
       }
     }
 
     clearTool(e: MouseEvent) {
       if (e.type === 'mousedown') {
-        this.toolDown = true;
+        this.toolConfig.toolDown = true;
 
         this.startNewAction();
       } else if (e.type === 'mouseup') {
-        if (!this.toolDown) return;
+        if (!this.toolConfig.toolDown) return;
 
         // Only clear the canvas if the click release happens inside the canvas
         if (e.target === this.canvasElement) {
           const action: CanvasAction = { tool: 'clear' };
 
-          this.actionsHistory[this.actionsHistory.length - 1].push(action);
+          this.history.actionsHistory[this.history.actionsHistory.length - 1].push(action);
 
           this.performCanvasAction(action);
         }
 
-        this.toolDown = false;
+        this.toolConfig.toolDown = false;
       }
     }
 
     bucketTool(e: MouseEvent) {
       if (e.type === 'mousedown') {
-        this.toolDown = true;
+        this.toolConfig.toolDown = true;
 
         this.startNewAction();
       } else if (e.type === 'mouseup') {
-        if (!this.toolDown) return;
+        if (!this.toolConfig.toolDown) return;
 
         // Only clear the canvas if the click release happens inside the canvas
         if (e.target === this.canvasElement) {
-          const action: CanvasAction = { tool: 'bucket', color: this.brushColor };
+          const action: CanvasAction = { tool: 'bucket', color: this.toolConfig.brushColor };
 
-          this.actionsHistory[this.actionsHistory.length - 1].push(action);
+          this.history.actionsHistory[this.history.actionsHistory.length - 1].push(action);
 
           this.performCanvasAction(action);
         }
 
-        this.toolDown = false;
+        this.toolConfig.toolDown = false;
       }
     }
 
     eraserTool(e: MouseEvent) {
       if (e.type === 'mousedown') {
-        this.toolDown = true;
+        this.toolConfig.toolDown = true;
         const { x, y } = this.canvasElement.getBoundingClientRect();
-        this.lastCoords.x = (e.clientX - x) * this.scale;
-        this.lastCoords.y = (e.clientY - y) * this.scale;
+        this.toolConfig.lastCoords.x = (e.clientX - x) * this.canvasConfig.scale;
+        this.toolConfig.lastCoords.y = (e.clientY - y) * this.canvasConfig.scale;
 
         this.startNewAction();
       } else if (e.type === 'mousemove') {
-        if (!this.toolDown) return;
+        if (!this.toolConfig.toolDown) return;
 
         const { x, y } = this.canvasElement.getBoundingClientRect();
 
         const newCoords = {
-          x: (e.clientX - x) * this.scale,
-          y: (e.clientY - y) * this.scale,
+          x: (e.clientX - x) * this.canvasConfig.scale,
+          y: (e.clientY - y) * this.canvasConfig.scale,
         };
 
         const action: CanvasAction = {
-          tool: 'eraser', start: { ...this.lastCoords }, end: { ...newCoords }, size: this.brushSize,
+          tool: 'eraser', start: { ...this.toolConfig.lastCoords }, end: { ...newCoords }, size: this.toolConfig.brushSize,
         };
 
-        this.actionsHistory[this.actionsHistory.length - 1].push(action);
+        this.history.actionsHistory[this.history.actionsHistory.length - 1].push(action);
 
         this.performCanvasAction(action);
 
-        this.lastCoords = newCoords;
+        this.toolConfig.lastCoords = newCoords;
       } else if (e.type === 'mouseup') {
-        if (!this.toolDown) return;
+        if (!this.toolConfig.toolDown) return;
 
         if (e.target === this.canvasElement) {
           const { x, y } = this.canvasElement.getBoundingClientRect();
 
           const newCoords = {
-            x: (e.clientX - x) * this.scale,
-            y: (e.clientY - y) * this.scale,
+            x: (e.clientX - x) * this.canvasConfig.scale,
+            y: (e.clientY - y) * this.canvasConfig.scale,
           };
 
           const action: CanvasAction = {
-            tool: 'eraser', start: { ...this.lastCoords }, end: { ...newCoords }, size: this.brushSize,
+            tool: 'eraser', start: { ...this.toolConfig.lastCoords }, end: { ...newCoords }, size: this.toolConfig.brushSize,
           };
 
-          this.actionsHistory[this.actionsHistory.length - 1].push(action);
+          this.history.actionsHistory[this.history.actionsHistory.length - 1].push(action);
 
           this.performCanvasAction(action);
 
-          this.lastCoords = newCoords;
+          this.toolConfig.lastCoords = newCoords;
         }
 
-        this.toolDown = false;
+        this.toolConfig.toolDown = false;
       }
     }
 
     startNewAction() {
-      this.actionsHistory.push([]);
+      this.history.actionsHistory.push([]);
 
       // Clear Undo history when a new action is started
-      this.undoHistory = [];
+      this.history.undoHistory = [];
     }
 
     undo(redraw: boolean = true) {
-      const lastAction = this.actionsHistory.pop();
+      const lastAction = this.history.actionsHistory.pop();
 
       if (lastAction) {
-        this.undoHistory.push(lastAction);
+        this.history.undoHistory.push(lastAction);
       }
 
       if (redraw) {
@@ -340,10 +346,10 @@ export class DrawingCanvasController implements IDrawingCanvas {
     }
 
     redo(redraw: boolean = true) {
-      const lastUndo = this.undoHistory.pop();
+      const lastUndo = this.history.undoHistory.pop();
 
       if (lastUndo) {
-        this.actionsHistory.push(lastUndo);
+        this.history.actionsHistory.push(lastUndo);
       }
 
       if (redraw) {
@@ -356,11 +362,11 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
       this.performCanvasAction(action);
 
-      if (this.background) {
-        this.setBackgroundFromElement(this.background);
+      if (this.canvasConfig.background) {
+        this.setBackgroundFromElement(this.canvasConfig.background);
       }
 
-      this.actionsHistory.forEach((ca) => {
+      this.history.actionsHistory.forEach((ca) => {
         ca.forEach((cai) => {
           this.performCanvasAction(cai);
         });
@@ -368,7 +374,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
     }
 
     playDrawing() {
-      if (this.actionsHistory.length < 1) {
+      if (this.history.actionsHistory.length < 1) {
         return;
       }
 
@@ -376,20 +382,20 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
       this.performCanvasAction(action);
 
-      this.historyIndex = 0;
-      this.actionIndex = 0;
+      this.history.historyIndex = 0;
+      this.history.actionIndex = 0;
 
       const interval = setInterval(() => {
-        this.performCanvasAction(this.actionsHistory[this.historyIndex][this.actionIndex]!);
+        this.performCanvasAction(this.history.actionsHistory[this.history.historyIndex][this.history.actionIndex]!);
 
-        this.actionIndex += 1;
+        this.history.actionIndex += 1;
 
-        if (this.actionIndex >= this.actionsHistory[this.historyIndex].length) {
-          this.historyIndex += 1;
-          this.actionIndex = 0;
+        if (this.history.actionIndex >= this.history.actionsHistory[this.history.historyIndex].length) {
+          this.history.historyIndex += 1;
+          this.history.actionIndex = 0;
         }
 
-        if (this.historyIndex >= this.actionsHistory.length) {
+        if (this.history.historyIndex >= this.history.actionsHistory.length) {
           clearInterval(interval);
         }
       }, 5);
@@ -398,7 +404,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
     onCanvasEvent(e: MouseEvent) {
       // console.log('-- On Canvas Event --');
       // console.log({ type: e.type, target: e.target, current: e.currentTarget });
-      this.toolFuncs[this.toolType](e);
+      this.toolFuncs[this.toolConfig.toolType](e);
     }
 
     onTouchEvent(e: TouchEvent) {
@@ -426,9 +432,9 @@ export class DrawingCanvasController implements IDrawingCanvas {
     }
 
     onWindowResize() {
-      this.scale = this.width / this.canvasElement.offsetWidth;
+      this.canvasConfig.scale = this.canvasConfig.width / this.canvasElement.offsetWidth;
 
-      this.canvasElement.style.height = `${this.height / this.scale}px`;
+      this.canvasElement.style.height = `${this.canvasConfig.height / this.canvasConfig.scale}px`;
     }
 
     getDataURL(type?: string | undefined, quality?: any) {
@@ -444,7 +450,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
       temp.src = url;
 
-      this.background = temp;
+      this.canvasConfig.background = temp;
     }
 
     setBackgroundFromElement(img: HTMLImageElement) {
@@ -463,13 +469,13 @@ export class DrawingCanvasController implements IDrawingCanvas {
     }
 
     reset() {
-      this.actionsHistory = [];
-      this.historyIndex = 0;
-      this.lastCoords = {
+      this.history.actionsHistory = [];
+      this.history.historyIndex = 0;
+      this.toolConfig.lastCoords = {
         x: 0,
         y: 0,
       };
-      this.toolDown = false;
+      this.toolConfig.toolDown = false;
 
       this.setBackgroundColor('#ffffff');
     }
@@ -500,8 +506,8 @@ export class DrawingCanvasController implements IDrawingCanvas {
     }
 
     initCanvas() {
-      this.canvasElement.width = this.width;
-      this.canvasElement.height = this.height;
+      this.canvasElement.width = this.canvasConfig.width;
+      this.canvasElement.height = this.canvasConfig.height;
 
       const w = this.canvasElement.ownerDocument!.defaultView;
 
