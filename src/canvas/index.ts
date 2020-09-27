@@ -1,5 +1,3 @@
-import { RGBColor } from '../color';
-
 interface ICoords {
     x: number,
     y: number,
@@ -9,12 +7,18 @@ type TouchEventsMap = Pick<HTMLElementEventMap, 'touchstart' | 'touchmove' | 'to
 
 export type CanvasToolType = 'pen' | 'bucket' | 'eraser' | 'clear';
 
+type StrokeStyle = CanvasRenderingContext2D['strokeStyle']
+
+type FillStyle = CanvasRenderingContext2D['fillStyle']
+
+export type StrokeFillStyle = StrokeStyle | FillStyle
+
 type CanvasAction = {
     tool: CanvasToolType,
     start?: ICoords,
     end?: ICoords,
     size?: number,
-    color?: string,
+    color?: StrokeFillStyle
 }
 
 interface IDrawingCanvas {
@@ -23,7 +27,7 @@ interface IDrawingCanvas {
     scale: number,
     toolType: CanvasToolType
     brushSize: number,
-    brushColor: RGBColor,
+    brushColor: StrokeFillStyle,
     lastCoords: ICoords,
     toolDown: boolean,
     actionsHistory: CanvasAction[][],
@@ -58,7 +62,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
     brushSize: number = 5;
 
-    brushColor: RGBColor = new RGBColor(0, 0, 0);
+    brushColor: StrokeFillStyle = '#000000';
 
     lastCoords: ICoords = {
       x: 0,
@@ -112,7 +116,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
       this.initCanvas();
     }
 
-    drawLine(from: ICoords, to: ICoords, width: number, color: string) {
+    private drawLine(from: ICoords, to: ICoords, width: number, color: StrokeFillStyle) {
       const ctx = this.canvasElement.getContext('2d')!;
 
       ctx.beginPath();
@@ -183,7 +187,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
           start: { ...this.lastCoords },
           end: { ...newCoords },
           size: this.brushSize,
-          color: this.brushColor.toHex(),
+          color: this.brushColor,
         };
 
         this.actionsHistory[this.actionsHistory.length - 1].push(action);
@@ -207,7 +211,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
             start: { ...this.lastCoords },
             end: { ...newCoords },
             size: this.brushSize,
-            color: this.brushColor.toHex(),
+            color: this.brushColor,
           };
 
           this.actionsHistory[this.actionsHistory.length - 1].push(action);
@@ -252,7 +256,7 @@ export class DrawingCanvasController implements IDrawingCanvas {
 
         // Only clear the canvas if the click release happens inside the canvas
         if (e.target === this.canvasElement) {
-          const action: CanvasAction = { tool: 'bucket', color: this.brushColor.toHex() };
+          const action: CanvasAction = { tool: 'bucket', color: this.brushColor };
 
           this.actionsHistory[this.actionsHistory.length - 1].push(action);
 
