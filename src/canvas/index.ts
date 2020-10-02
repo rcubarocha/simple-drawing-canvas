@@ -11,27 +11,20 @@ export type StrokeFillStyle = StrokeStyle | FillStyle
 
 type TouchEventsMap = Pick<HTMLElementEventMap, 'touchstart' | 'touchmove' | 'touchend' | 'touchcancel'>;
 
-type MouseEventKeys = keyof Pick<HTMLElementEventMap, 'mousedown' | 'mousemove' | 'mouseup'>
+// type MouseEventKeys = keyof Pick<HTMLElementEventMap, 'mousedown' | 'mousemove' | 'mouseup'>
 
 export interface CanvasTool {
   // name: string,
   state: string
 }
 
-export interface NoneTool extends CanvasTool { }
+export type NoneTool = CanvasTool
 
 export interface CanvasTools {
   none?: NoneTool,
 }
 
 export type CanvasToolType = keyof CanvasTools // export
-
-type CanvasActionItem = {
-  toolConfig: ToolConfig,
-  coords: ICoords,
-}
-
-type CanvasAction = CanvasActionItem[]
 
 interface CanvasConfig {
   width: number,
@@ -46,6 +39,13 @@ interface ToolConfig {
   style: StrokeFillStyle,
   toolState: string, // arbitrary identifier for the state of the tool
 }
+
+type CanvasActionItem = {
+  toolConfig: ToolConfig,
+  coords: ICoords,
+}
+
+type CanvasAction = CanvasActionItem[]
 
 interface CanvasHistory {
   actionsHistory: CanvasAction[],
@@ -82,12 +82,16 @@ export type ToolActionItemCallback = (
   actionHistory: CanvasAction
 ) => void;
 
-type MouseEventToolCallbackMap = {
-  [K in MouseEventKeys]: MouseEventToolCallback
-}
-
 export class DrawingCanvasController implements ICanvasController {
   private canvasElement: HTMLCanvasElement;
+
+  onTouchEventBound: (e: TouchEvent) => void;
+
+  onCanvasFocusBound: (e: TouchEvent) => void;
+
+  onCanvasEventBound: (e: MouseEvent) => void;
+
+  onWindowResizeBound: () => void;
 
   get canvas(): HTMLCanvasElement {
     return this.canvasElement;
@@ -100,7 +104,7 @@ export class DrawingCanvasController implements ICanvasController {
     background: null,
   }
 
-  private newActionNextEvent: boolean = true;
+  private newActionNextEvent = true;
 
   toolConfig: ToolConfig = {
     type: 'pen',
@@ -128,7 +132,7 @@ export class DrawingCanvasController implements ICanvasController {
 
   toolActionItemCallbacks: { [K in CanvasToolType]?: ToolActionItemCallback } = { }
 
-  canvasFocusCallback(e: TouchEvent) {
+  onCanvasFocus(e: TouchEvent): void {
     if (e.target === this.canvasElement) {
       e.preventDefault();
     }
@@ -139,15 +143,15 @@ export class DrawingCanvasController implements ICanvasController {
     this.canvasConfig.width = width;
     this.canvasConfig.height = height;
 
-    this.canvasFocusCallback = this.canvasFocusCallback.bind(this);
-    this.onCanvasEvent = this.onCanvasEvent.bind(this);
-    this.onTouchEvent = this.onTouchEvent.bind(this);
-    this.onWindowResize = this.onWindowResize.bind(this);
+    this.onCanvasFocusBound = this.onCanvasFocus.bind(this);
+    this.onCanvasEventBound = this.onCanvasEvent.bind(this);
+    this.onTouchEventBound = this.onTouchEvent.bind(this);
+    this.onWindowResizeBound = this.onWindowResize.bind(this);
 
     this.initCanvas();
   }
 
-  addTool(toolType: CanvasToolType, eventCB: MouseEventToolCallback, actionCB: ToolActionItemCallback) {
+  addTool(toolType: CanvasToolType, eventCB: MouseEventToolCallback, actionCB: ToolActionItemCallback): void {
     this.toolMouseEventCallbacks[toolType] = eventCB;
     this.toolActionItemCallbacks[toolType] = actionCB;
   }
@@ -163,7 +167,7 @@ export class DrawingCanvasController implements ICanvasController {
     ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
   }
 
-  performCanvasAction(actionItem: CanvasActionItem, actionHistory: CanvasAction) {
+  performCanvasAction(actionItem: CanvasActionItem, actionHistory: CanvasAction): void {
     this.toolActionItemCallbacks[actionItem.toolConfig.type]?.(
       this.canvasElement,
       actionItem,
@@ -171,54 +175,7 @@ export class DrawingCanvasController implements ICanvasController {
     );
   }
 
-  // performCanvasAction(actionItem: CanvasActionItem) {
-  //   this.toolActionItemCallbacks[actionItem.toolConfig.type]?.(
-  //     this.canvasElement,
-  //     actionItem,
-  //     this.history.actionsHistory[this.history.actionsHistory.length - 1],
-  //   );
-  // }
-
-  // performCanvasAction(actionItem: CanvasActionItem) {
-  //   this.toolActionItemCallbacks[actionItem.toolConfig.type]?.(
-  //     this.canvasElement, actionItem,
-  //     this.history.actionsHistory[this.history.actionsHistory.length - 1]
-  //   );
-
-  //   // const ctx = this.canvasElement.getContext('2d')!;
-
-  //   // switch (actionItem.tool) {
-  //   //   case 'pen':
-  //   //     ctx.globalCompositeOperation = 'source-over';
-
-  //   //     this.drawLine(actionItem.start!, actionItem.end!, actionItem.size!, actionItem.color!);
-  //   //     break;
-  //   //     // case 'clear':
-
-  //   //     //   ctx.globalCompositeOperation = 'source-over';
-
-  //   //     //   ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-
-  //   //     //   ctx.fillStyle = '#ffffff';
-  //   //     //   ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-  //   //     //   break;
-  //   //     // case 'bucket':
-  //   //     //   ctx.globalCompositeOperation = 'source-over';
-
-  //   //     //   ctx.fillStyle = action.color!;
-  //   //     //   ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-  //   //     //   break;
-  //   //     // case 'eraser':
-  //   //     //   ctx.globalCompositeOperation = 'destination-out';
-
-  //   //     //   this.drawLine(action.start!, action.end!, action.size!, '#ffffff');
-  //   //     //   break;
-  //   //   default:
-  //   //     break;
-  //   // }
-  // }
-
-  undo(redraw: boolean = true) {
+  undo(redraw = true): void {
     const lastAction = this.history.actionsHistory.pop();
 
     if (lastAction) {
@@ -230,7 +187,7 @@ export class DrawingCanvasController implements ICanvasController {
     }
   }
 
-  redo(redraw: boolean = true) {
+  redo(redraw = true): void {
     const lastUndo = this.history.undoHistory.pop();
 
     if (lastUndo) {
@@ -242,7 +199,7 @@ export class DrawingCanvasController implements ICanvasController {
     }
   }
 
-  performAllCanvasActions() {
+  performAllCanvasActions(): void {
     // const action: CanvasAction = { tool: 'clear' };
 
     // this.performCanvasAction(action);
@@ -261,7 +218,7 @@ export class DrawingCanvasController implements ICanvasController {
     });
   }
 
-  playDrawing() {
+  playDrawing(): void {
     if (this.history.actionsHistory.length < 1) {
       return;
     }
@@ -273,7 +230,7 @@ export class DrawingCanvasController implements ICanvasController {
 
     const interval = setInterval(() => {
       this.performCanvasAction(
-        this.history.actionsHistory[this.history.historyIndex][this.history.actionIndex]!,
+        this.history.actionsHistory[this.history.historyIndex][this.history.actionIndex],
         this.history.actionsHistory[this.history.historyIndex].slice(0, this.history.actionIndex),
       );
 
@@ -290,14 +247,14 @@ export class DrawingCanvasController implements ICanvasController {
     }, 5);
   }
 
-  startNewAction() {
+  startNewAction(): void {
     this.history.actionsHistory.push([]);
 
     // Clear Undo history when a new action is started
     this.history.undoHistory = [];
   }
 
-  addNewActionItem(newAction: boolean, actionItem: CanvasActionItem) {
+  addNewActionItem(newAction: boolean, actionItem: CanvasActionItem): void {
     if (newAction) {
       this.startNewAction();
     }
@@ -305,7 +262,7 @@ export class DrawingCanvasController implements ICanvasController {
     this.history.actionsHistory[this.history.actionsHistory.length - 1].push(actionItem);
   }
 
-  onCanvasEvent(e: MouseEvent) {
+  onCanvasEvent(e: MouseEvent): void {
     const callback = this.toolMouseEventCallbacks[this.toolConfig.type];
 
     if (callback) {
@@ -339,8 +296,8 @@ export class DrawingCanvasController implements ICanvasController {
     }
   }
 
-  onTouchEvent(e: TouchEvent) {
-    const me = new MouseEvent(DrawingCanvasController.eventMap[e.type as keyof TouchEventsMap]!, {
+  onTouchEvent(e: TouchEvent): void {
+    const me = new MouseEvent(DrawingCanvasController.eventMap[e.type as keyof TouchEventsMap], {
       clientX: e.changedTouches[0].clientX,
       clientY: e.changedTouches[0].clientY,
       bubbles: true,
@@ -352,25 +309,25 @@ export class DrawingCanvasController implements ICanvasController {
      * We get the element over which the TouchEnd happened using elementFromPoint()
      * so we can accurately trigger the synthetic mouse event
      */
-    const doc = this.canvasElement.ownerDocument!;
-    const touchEndElement = doc.elementFromPoint(me.clientX, me.clientY)!;
+    const doc = this.canvasElement.ownerDocument;
+    const touchEndElement = doc.elementFromPoint(me.clientX, me.clientY);
 
     if (doc && touchEndElement) {
       touchEndElement.dispatchEvent(me);
     }
   }
 
-  onWindowResize() {
+  onWindowResize(): void {
     this.canvasConfig.scale = this.canvasConfig.width / this.canvasElement.offsetWidth;
 
     this.canvasElement.style.height = `${this.canvasConfig.height / this.canvasConfig.scale}px`;
   }
 
-  getDataURL(type?: string | undefined, quality?: any) {
+  getDataURL(type?: string | undefined, quality?: any): string {
     return this.canvasElement.toDataURL(type, quality);
   }
 
-  setBackground(url: string) {
+  setBackground(url: string): void {
     const temp = new Image();
     temp.crossOrigin = 'Anonymous';
     temp.onload = () => {
@@ -382,13 +339,13 @@ export class DrawingCanvasController implements ICanvasController {
     this.canvasConfig.background = temp;
   }
 
-  setBackgroundFromElement(img: HTMLImageElement) {
+  setBackgroundFromElement(img: HTMLImageElement): void {
     const ctx = this.canvasElement.getContext('2d')!;
 
     ctx.drawImage(img, 0, 0, this.canvasElement.width, this.canvasElement.height);
   }
 
-  setBackgroundColor(color: string) {
+  setBackgroundColor(color: string): void {
     const ctx = this.canvasElement.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'source-over';
@@ -397,49 +354,49 @@ export class DrawingCanvasController implements ICanvasController {
     ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
   }
 
-  reset() {
+  reset(): void {
     this.history.actionsHistory = [];
     this.history.historyIndex = 0;
 
     this.setBackgroundColor('#ffffff');
   }
 
-  teardown() {
+  teardown(): void {
     Object.keys(DrawingCanvasController.eventMap).forEach((key) => {
       const k = key as keyof TouchEventsMap;
 
       if (k === 'touchend' || k === 'touchcancel') {
-        this.canvasElement.ownerDocument!.removeEventListener(k, this.onTouchEvent);
+        this.canvasElement.ownerDocument.removeEventListener(k, this.onTouchEventBound);
       } else {
-        this.canvasElement.removeEventListener(k, this.onTouchEvent);
+        this.canvasElement.removeEventListener(k, this.onTouchEventBound);
       }
 
       // Prevent scrolling on touch interfaces when event occurs on canvas
-      this.canvasElement.ownerDocument!.body.removeEventListener(k, this.canvasFocusCallback, { capture: false });
+      this.canvasElement.ownerDocument.body.removeEventListener(k, this.onCanvasFocusBound, { capture: false });
     });
 
-    const w = this.canvasElement.ownerDocument!.defaultView;
+    const w = this.canvasElement.ownerDocument.defaultView;
 
     if (w) {
-      w.removeEventListener('resize', this.onWindowResize);
+      w.removeEventListener('resize', this.onWindowResizeBound);
     }
 
-    this.canvasElement.removeEventListener('mousedown', this.onCanvasEvent);
-    this.canvasElement.removeEventListener('mousemove', this.onCanvasEvent);
-    this.canvasElement.ownerDocument!.removeEventListener('mouseup', this.onCanvasEvent);
+    this.canvasElement.removeEventListener('mousedown', this.onCanvasEventBound);
+    this.canvasElement.removeEventListener('mousemove', this.onCanvasEventBound);
+    this.canvasElement.ownerDocument.removeEventListener('mouseup', this.onCanvasEventBound);
   }
 
-  initCanvas() {
+  initCanvas(): void {
     this.canvasElement.width = this.canvasConfig.width;
     this.canvasElement.height = this.canvasConfig.height;
 
-    const w = this.canvasElement.ownerDocument!.defaultView;
+    const w = this.canvasElement.ownerDocument.defaultView;
 
     this.setBackgroundColor('#ffffff');
 
     // w && (w.onresize = this.onWindowResize);
     if (w) {
-      w.addEventListener('resize', this.onWindowResize);
+      w.addEventListener('resize', this.onWindowResizeBound);
     }
 
     this.onWindowResize();
@@ -448,20 +405,20 @@ export class DrawingCanvasController implements ICanvasController {
       const k = key as keyof TouchEventsMap;
 
       if (k === 'touchend' || k === 'touchcancel') {
-        this.canvasElement.ownerDocument!.addEventListener(k, this.onTouchEvent);
+        this.canvasElement.ownerDocument.addEventListener(k, this.onTouchEventBound);
       } else {
-        this.canvasElement.addEventListener(k, this.onTouchEvent);
+        this.canvasElement.addEventListener(k, this.onTouchEventBound);
       }
 
       // Prevent scrolling on touch interfaces when event occurs on canvas
-      const { body } = this.canvasElement.ownerDocument!;
+      const { body } = this.canvasElement.ownerDocument;
 
-      body.addEventListener(k, this.canvasFocusCallback, { capture: false, passive: false });
+      body.addEventListener(k, this.onCanvasFocusBound, { capture: false, passive: false });
     });
 
-    this.canvasElement.addEventListener('mousedown', this.onCanvasEvent);
-    this.canvasElement.addEventListener('mousemove', this.onCanvasEvent);
+    this.canvasElement.addEventListener('mousedown', this.onCanvasEventBound);
+    this.canvasElement.addEventListener('mousemove', this.onCanvasEventBound);
     // Setting listener to the document so lifting the mouse button anywhere will register as the tool being lifted
-    this.canvasElement.ownerDocument!.addEventListener('mouseup', this.onCanvasEvent);
+    this.canvasElement.ownerDocument.addEventListener('mouseup', this.onCanvasEventBound);
   }
 }

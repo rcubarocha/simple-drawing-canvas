@@ -75,47 +75,6 @@ export const penMouseEventCallback: MouseEventToolCallback = function penMouseEv
       throw Error('Inconsistent State');
     }
 
-    // TODO: Issue when up event outside of canvas
-    // if (e.target !== c) {
-    //   throw Error('Up Event Outside Canvas');
-    // } else {
-    //   toolConfig.toolState = 'up';
-    //   const { x, y } = c.getBoundingClientRect();
-
-    //   const eCoords: ICoords = {
-    //     x: (e.clientX - x) * cc.scale,
-    //     y: (e.clientY - y) * cc.scale,
-    //   };
-
-    //   return {
-    //     endCurrentAction: true,
-    //     canvasActionItem: {
-    //       toolConfig,
-    //       coords: eCoords,
-    //     },
-    //   };
-
-    //   // const { x, y } = this.canvasElement.getBoundingClientRect();
-
-    //   // const newCoords: ICoords = {
-    //   //   x: (e.clientX - x) * this.canvasConfig.scale,
-    //   //   y: (e.clientY - y) * this.canvasConfig.scale,
-    //   // };
-
-    //   // const action: CanvasAction = {
-    //   //   tool: 'pen',
-    //   //   start: { ...this.toolConfig.lastCoords },
-    //   //   end: { ...newCoords },
-    //   //   size: this.toolConfig.size,
-    //   //   color: this.toolConfig.style,
-    //   // };
-
-    //   // this.history.actionsHistory[this.history.actionsHistory.length - 1].push(action);
-
-    //   // this.performCanvasAction(action);
-
-    //   // this.toolConfig.lastCoords = newCoords;
-    // }
     toolConfig.toolState = 'up';
     const { x, y } = c.getBoundingClientRect();
 

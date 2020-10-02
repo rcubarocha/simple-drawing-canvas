@@ -1,5 +1,4 @@
 import type {
-  // eslint-disable-next-line no-unused-vars
   CanvasTool, MouseEventToolCallback, ToolActionItemCallback, StrokeFillStyle, ICoords,
 } from '../../canvas';
 

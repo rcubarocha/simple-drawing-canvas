@@ -1,6 +1,5 @@
 import type {
-  // eslint-disable-next-line no-unused-vars
-  CanvasTool, MouseEventToolCallback, ToolActionItemCallback, StrokeFillStyle, ICoords,
+  CanvasTool, MouseEventToolCallback, ToolActionItemCallback, ICoords,
 } from '../../canvas';
 import drawLine from '../../globals';
 

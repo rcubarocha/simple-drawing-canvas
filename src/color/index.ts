@@ -7,7 +7,7 @@ export class RGBColor {
 
     alpha: number;
 
-    constructor(red: number, green: number, blue: number, alpha: number = 1.0) {
+    constructor(red: number, green: number, blue: number, alpha = 1.0) {
       this.red = red;
       this.green = green;
       this.blue = blue;
