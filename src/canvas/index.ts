@@ -18,13 +18,13 @@ export interface CanvasTool {
   state: string
 }
 
-export type NoneTool = CanvasTool
+// export type NoneTool = CanvasTool
 
-export interface CanvasTools {
-  none?: NoneTool,
-}
+// export interface CanvasTools {
+//   none?: NoneTool,
+// }
 
-export type CanvasToolType = keyof CanvasTools // export
+// export type CanvasToolType = keyof CanvasTools // export
 
 interface CanvasConfig {
   width: number,
@@ -33,31 +33,31 @@ interface CanvasConfig {
   background: HTMLImageElement | null,
 }
 
-interface ToolConfig {
-  type: CanvasToolType
-  size: number,
-  style: StrokeFillStyle,
-  toolState: string, // arbitrary identifier for the state of the tool
-}
+// interface ToolConfig {
+//   type: CanvasToolType
+//   size: number,
+//   style: StrokeFillStyle,
+//   toolState: string, // arbitrary identifier for the state of the tool
+// }
 
-type CanvasActionItem = {
-  toolConfig: ToolConfig,
+type CanvasActionItem<T> = {
+  toolConfig: T & CanvasTool,
   coords: ICoords,
 }
 
-type CanvasAction = CanvasActionItem[]
+type CanvasAction<T> = CanvasActionItem<T>[]
 
-interface CanvasHistory {
-  actionsHistory: CanvasAction[],
-  undoHistory: CanvasAction[],
+interface CanvasHistory<ToolTypes> {
+  actionsHistory: CanvasAction<ToolTypes>[],
+  undoHistory: CanvasAction<ToolTypes>[],
   historyIndex: number,
   actionIndex: number,
 }
 
-interface ICanvasController {
+interface ICanvasController<ToolsUnion> {
   canvasConfig: CanvasConfig,
-  toolConfig: ToolConfig,
-  history: CanvasHistory,
+  toolConfig: ToolsUnion & CanvasTool,
+  history: CanvasHistory<ToolsUnion & CanvasTool>,
   initCanvas(): void,
   teardown(): void,
   undo(redraw?: boolean): void,
@@ -66,23 +66,23 @@ interface ICanvasController {
   setBackground(url: string): void,
 }
 
-type MouseEventToolCallbackResult = { endCurrentAction: boolean, canvasActionItem?: CanvasActionItem };
+type MouseEventToolCallbackResult<ToolType> = { endCurrentAction: boolean, canvasActionItem?: CanvasActionItem<ToolType> };
 
-export type MouseEventToolCallback = (
+export type MouseEventToolCallback<ToolType> = (
   event: MouseEvent,
   canvas: HTMLCanvasElement,
   canvasConfig: CanvasConfig,
-  toolConfig: ToolConfig,
-  actionHistory: CanvasAction,
-) => MouseEventToolCallbackResult | null;
+  toolConfig: ToolType,
+  actionHistory: CanvasAction<ToolType>,
+) => MouseEventToolCallbackResult<ToolType> | null;
 
-export type ToolActionItemCallback = (
+export type ToolActionItemCallback<ToolType> = (
   canvas: HTMLCanvasElement,
-  action: CanvasActionItem,
-  actionHistory: CanvasAction
+  action: CanvasActionItem<ToolType>,
+  actionHistory: CanvasAction<ToolType>
 ) => void;
 
-export class DrawingCanvasController implements ICanvasController {
+export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> implements ICanvasController<ToolTypes> {
   private canvasElement: HTMLCanvasElement;
 
   onTouchEventBound: (e: TouchEvent) => void;
@@ -106,15 +106,10 @@ export class DrawingCanvasController implements ICanvasController {
 
   private newActionNextEvent = true;
 
-  toolConfig: ToolConfig = {
-    type: 'pen',
-    size: 5,
-    style: '#000000',
-    toolState: '',
-  }
+  toolConfig: ToolTypes & CanvasTool
   // toolConfigs: CanvasTools = { }
 
-  history: CanvasHistory = {
+  history: CanvasHistory<ToolTypes > = {
     actionsHistory: [],
     undoHistory: [],
     historyIndex: 0,
@@ -128,9 +123,9 @@ export class DrawingCanvasController implements ICanvasController {
     touchcancel: 'mouseup',
   }
 
-  toolMouseEventCallbacks: { [K in CanvasToolType]?: MouseEventToolCallback } = { }
+  toolMouseEventCallbacks: { [K in keyof ToolTypes]?: MouseEventToolCallback<ToolTypes[K]> } = { }
 
-  toolActionItemCallbacks: { [K in CanvasToolType]?: ToolActionItemCallback } = { }
+  toolActionItemCallbacks: { [K in keyof ToolTypes]?: ToolActionItemCallback<ToolTypes[K]> } = { }
 
   onCanvasFocus(e: TouchEvent): void {
     if (e.target === this.canvasElement) {
