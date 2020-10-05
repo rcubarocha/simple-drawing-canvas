@@ -9,22 +9,9 @@ type FillStyle = CanvasRenderingContext2D['fillStyle']
 
 export type StrokeFillStyle = StrokeStyle | FillStyle
 
-type TouchEventsMap = Pick<HTMLElementEventMap, 'touchstart' | 'touchmove' | 'touchend' | 'touchcancel'>;
+type TouchEventsMap = Pick<HTMLElementEventMap, 'touchstart' | 'touchmove' | 'touchend' | 'touchcancel'>
 
-// type MouseEventKeys = keyof Pick<HTMLElementEventMap, 'mousedown' | 'mousemove' | 'mouseup'>
-
-export interface CanvasTool {
-  // name: string,
-  state: string
-}
-
-// export type NoneTool = CanvasTool
-
-// export interface CanvasTools {
-//   none?: NoneTool,
-// }
-
-// export type CanvasToolType = keyof CanvasTools // export
+type MouseEventsMap = Pick<HTMLElementEventMap, 'mousedown' | 'mousemove' | 'mouseup'>
 
 interface CanvasConfig {
   width: number,
@@ -33,71 +20,59 @@ interface CanvasConfig {
   background: HTMLImageElement | null,
 }
 
-// interface ToolConfig {
-//   type: CanvasToolType
-//   size: number,
-//   style: StrokeFillStyle,
-//   toolState: string, // arbitrary identifier for the state of the tool
-// }
+export interface CanvasTool<N extends string> {
+  name: N,
+  state: string
+}
 
-type CanvasActionItem<T> = {
-  toolConfig: T & CanvasTool,
+type CanvasActionItem<T extends CanvasTool<any>> = {
+  toolConfig: T,
   coords: ICoords,
 }
 
-type CanvasAction<T> = CanvasActionItem<T>[]
+type CanvasAction<T extends CanvasTool<any>> = CanvasActionItem<T>[]
 
-interface CanvasHistory<ToolTypes> {
-  actionsHistory: CanvasAction<ToolTypes>[],
-  undoHistory: CanvasAction<ToolTypes>[],
+interface CanvasHistory<T extends CanvasTool<any>> {
+  actionsHistory: CanvasAction<T>[],
+  undoHistory: CanvasAction<T>[],
   historyIndex: number,
   actionIndex: number,
 }
 
-interface ICanvasController<ToolsUnion> {
-  canvasConfig: CanvasConfig,
-  toolConfig: ToolsUnion & CanvasTool,
-  history: CanvasHistory<ToolsUnion & CanvasTool>,
-  initCanvas(): void,
-  teardown(): void,
-  undo(redraw?: boolean): void,
-  redo(redraw?: boolean): void,
-  getDataURL: HTMLCanvasElement['toDataURL']
-  setBackground(url: string): void,
-}
+type MouseEventToolCallbackResult<T extends CanvasTool<any>> = {
+  endCurrentAction: boolean, canvasActionItem?: CanvasActionItem<T>
+};
 
-type MouseEventToolCallbackResult<ToolType> = { endCurrentAction: boolean, canvasActionItem?: CanvasActionItem<ToolType> };
-
-export type MouseEventToolCallback<ToolType> = (
+export type MouseEventToolCallback<T extends CanvasTool<any>> = (
   event: MouseEvent,
   canvas: HTMLCanvasElement,
   canvasConfig: CanvasConfig,
-  toolConfig: ToolType,
-  actionHistory: CanvasAction<ToolType>,
-) => MouseEventToolCallbackResult<ToolType> | null;
+  toolConfig: T,
+  actionHistory: CanvasAction<T>,
+) => MouseEventToolCallbackResult<T> | null;
 
-export type ToolActionItemCallback<ToolType> = (
+export type ToolActionItemCallback<T extends CanvasTool<any>> = (
   canvas: HTMLCanvasElement,
-  action: CanvasActionItem<ToolType>,
-  actionHistory: CanvasAction<ToolType>
+  action: CanvasActionItem<T>,
+  actionHistory: CanvasAction<T>
 ) => void;
 
-export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> implements ICanvasController<ToolTypes> {
+export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, M extends Record<N, T>> {
   private canvasElement: HTMLCanvasElement;
 
-  onTouchEventBound: (e: TouchEvent) => void;
+  private onTouchEventBound: (e: TouchEvent) => void;
 
-  onCanvasFocusBound: (e: TouchEvent) => void;
+  private onCanvasFocusBound: (e: TouchEvent) => void;
 
-  onCanvasEventBound: (e: MouseEvent) => void;
+  private onCanvasEventBound: (e: MouseEvent) => void;
 
-  onWindowResizeBound: () => void;
+  private onWindowResizeBound: () => void;
 
-  get canvas(): HTMLCanvasElement {
+  getCanvas(): HTMLCanvasElement {
     return this.canvasElement;
   }
 
-  canvasConfig: CanvasConfig = {
+  private canvasConfig: CanvasConfig = {
     width: 0,
     height: 0,
     scale: 1,
@@ -106,26 +81,27 @@ export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> 
 
   private newActionNextEvent = true;
 
-  toolConfig: ToolTypes & CanvasTool
-  // toolConfigs: CanvasTools = { }
+  currentTool: N
 
-  history: CanvasHistory<ToolTypes > = {
+  toolConfig: { [K in N]?: M[K] } = {}
+
+  private history: CanvasHistory<M[N]> = {
     actionsHistory: [],
     undoHistory: [],
     historyIndex: 0,
     actionIndex: 0,
   }
 
-  static eventMap: { [K in keyof TouchEventsMap]: keyof HTMLElementEventMap } = {
+  static eventMap: { [K in keyof TouchEventsMap]: keyof MouseEventsMap } = {
     touchstart: 'mousedown',
     touchmove: 'mousemove',
     touchend: 'mouseup',
     touchcancel: 'mouseup',
   }
 
-  toolMouseEventCallbacks: { [K in keyof ToolTypes]?: MouseEventToolCallback<ToolTypes[K]> } = { }
+  toolMouseEventCallbacks: { [K in N]?: MouseEventToolCallback<M[K]> } = { }
 
-  toolActionItemCallbacks: { [K in keyof ToolTypes]?: ToolActionItemCallback<ToolTypes[K]> } = { }
+  toolActionItemCallbacks: { [K in N]?: ToolActionItemCallback<M[K]> } = { }
 
   onCanvasFocus(e: TouchEvent): void {
     if (e.target === this.canvasElement) {
@@ -133,10 +109,16 @@ export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> 
     }
   }
 
-  constructor(canvasElement: HTMLCanvasElement, width: number, height: number) {
+  constructor(
+    canvasElement: HTMLCanvasElement,
+    width: number,
+    height: number,
+    startTool: N,
+  ) {
     this.canvasElement = canvasElement;
     this.canvasConfig.width = width;
     this.canvasConfig.height = height;
+    this.currentTool = startTool;
 
     this.onCanvasFocusBound = this.onCanvasFocus.bind(this);
     this.onCanvasEventBound = this.onCanvasEvent.bind(this);
@@ -146,9 +128,15 @@ export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> 
     this.initCanvas();
   }
 
-  addTool(toolType: CanvasToolType, eventCB: MouseEventToolCallback, actionCB: ToolActionItemCallback): void {
+  addTool<K extends N>(
+    toolType: K,
+    eventCB: MouseEventToolCallback<M[K]>,
+    actionCB: ToolActionItemCallback<M[K]>,
+    initialConfig: M[K],
+  ): void {
     this.toolMouseEventCallbacks[toolType] = eventCB;
     this.toolActionItemCallbacks[toolType] = actionCB;
+    this.toolConfig[toolType] = initialConfig;
   }
 
   private clearCanvas() {
@@ -162,8 +150,8 @@ export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> 
     ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
   }
 
-  performCanvasAction(actionItem: CanvasActionItem, actionHistory: CanvasAction): void {
-    this.toolActionItemCallbacks[actionItem.toolConfig.type]?.(
+  performCanvasAction(actionItem: CanvasActionItem<M[N]>, actionHistory: CanvasAction<M[N]>): void {
+    this.toolActionItemCallbacks[actionItem.toolConfig.name]?.(
       this.canvasElement,
       actionItem,
       actionHistory,
@@ -249,7 +237,7 @@ export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> 
     this.history.undoHistory = [];
   }
 
-  addNewActionItem(newAction: boolean, actionItem: CanvasActionItem): void {
+  addNewActionItem(newAction: boolean, actionItem: CanvasActionItem<M[N]>): void {
     if (newAction) {
       this.startNewAction();
     }
@@ -258,11 +246,11 @@ export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> 
   }
 
   onCanvasEvent(e: MouseEvent): void {
-    const callback = this.toolMouseEventCallbacks[this.toolConfig.type];
+    const callback = this.toolMouseEventCallbacks[this.currentTool];
 
     if (callback) {
       try {
-        const currentActionHistory: CanvasAction = this.newActionNextEvent
+        const currentActionHistory = this.newActionNextEvent
           ? []
           : this.history.actionsHistory[this.history.actionsHistory.length - 1];
 
@@ -270,7 +258,7 @@ export class DrawingCanvasController<ToolTypes extends Record<string, unknown>> 
           e,
           this.canvasElement,
           this.canvasConfig,
-          this.toolConfig,
+          this.toolConfig[this.currentTool]!,
           currentActionHistory,
         );
 

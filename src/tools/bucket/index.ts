@@ -2,21 +2,21 @@ import type {
   CanvasTool, MouseEventToolCallback, ToolActionItemCallback, StrokeFillStyle, ICoords,
 } from '../../canvas';
 
-interface BucketTool extends CanvasTool {
+export interface BucketTool extends CanvasTool<'bucket'> {
   style: StrokeFillStyle
 }
 
-declare module '../../canvas' {
-  export interface CanvasTools {
-    bucket?: BucketTool,
-  }
-}
-
-export const bucketMouseEventCallback: MouseEventToolCallback = function bucketMouseEventCallback(e, c, cc, tc, ah) {
+export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = function bucketMouseEventCallback(
+  e,
+  c,
+  cc,
+  tc,
+  ah,
+) {
   const toolConfig = { ...tc };
 
   if (e.type === 'mousedown') {
-    toolConfig.toolState = 'down';
+    toolConfig.state = 'down';
     const { x, y } = c.getBoundingClientRect();
 
     const eCoords: ICoords = {
@@ -38,7 +38,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback = function bucketM
       return null;
     }
 
-    const prevToolState = ah[ah.length - 1].toolConfig.toolState;
+    const prevToolState = ah[ah.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down') {
       throw Error('Inconsistent State');
@@ -48,7 +48,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback = function bucketM
     if (e.target !== c) {
       throw Error('Up Event Outside Canvas');
     } else {
-      toolConfig.toolState = 'up';
+      toolConfig.state = 'up';
       const { x, y } = c.getBoundingClientRect();
 
       const eCoords: ICoords = {
@@ -69,13 +69,13 @@ export const bucketMouseEventCallback: MouseEventToolCallback = function bucketM
   return null;
 };
 
-export const bucketDrawingCallback: ToolActionItemCallback = function bucketDrawingCallback(c, a) {
-  if (a.toolConfig.toolState === 'down') {
+export const bucketDrawingCallback: ToolActionItemCallback<BucketTool> = function bucketDrawingCallback(c, a) {
+  if (a.toolConfig.state === 'down') {
     // If the action is from the mousedown event, do nothing.
     return;
   }
 
-  if (a.toolConfig.toolState === 'up') {
+  if (a.toolConfig.state === 'up') {
     const ctx = c.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'source-over';
@@ -86,5 +86,5 @@ export const bucketDrawingCallback: ToolActionItemCallback = function bucketDraw
     return;
   }
 
-  throw Error(`Unrecognized Bucket Tool State: ${a.toolConfig.toolState}`);
+  throw Error(`Unrecognized Bucket Tool State: ${a.toolConfig.state}`);
 };

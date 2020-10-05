@@ -3,21 +3,21 @@ import type {
 } from '../../canvas';
 import drawLine from '../../globals';
 
-interface EraserTool extends CanvasTool {
+export interface EraserTool extends CanvasTool<'eraser'> {
   size: number,
 }
 
-declare module '../../canvas' {
-  export interface CanvasTools {
-    eraser?: EraserTool,
-  }
-}
-
-export const eraserMouseEventCallback: MouseEventToolCallback = function eraserMouseEventCallback(e, c, cc, tc, ah) {
+export const eraserMouseEventCallback: MouseEventToolCallback<EraserTool> = function eraserMouseEventCallback(
+  e,
+  c,
+  cc,
+  tc,
+  ah,
+) {
   const toolConfig = { ...tc };
 
   if (e.type === 'mousedown') {
-    toolConfig.toolState = 'down';
+    toolConfig.state = 'down';
     const { x, y } = c.getBoundingClientRect();
 
     const eCoords: ICoords = {
@@ -39,13 +39,13 @@ export const eraserMouseEventCallback: MouseEventToolCallback = function eraserM
       return null;
     }
 
-    const prevToolState = ah[ah.length - 1].toolConfig.toolState;
+    const prevToolState = ah[ah.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
       throw Error('Inconsistent Eraser Tool State');
     }
 
-    toolConfig.toolState = 'move';
+    toolConfig.state = 'move';
     const { x, y } = c.getBoundingClientRect();
 
     const eCoords: ICoords = {
@@ -67,13 +67,13 @@ export const eraserMouseEventCallback: MouseEventToolCallback = function eraserM
       return null;
     }
 
-    const prevToolState = ah[ah.length - 1].toolConfig.toolState;
+    const prevToolState = ah[ah.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
       throw Error('Inconsistent Eraser Tool State');
     }
 
-    toolConfig.toolState = 'up';
+    toolConfig.state = 'up';
     const { x, y } = c.getBoundingClientRect();
 
     const eCoords: ICoords = {
@@ -93,13 +93,13 @@ export const eraserMouseEventCallback: MouseEventToolCallback = function eraserM
   throw Error('Inconsistent Eraser Tool State');
 };
 
-export const eraserDrawingCallback: ToolActionItemCallback = function eraserDrawingCallback(c, a, h) {
+export const eraserDrawingCallback: ToolActionItemCallback<EraserTool> = function eraserDrawingCallback(c, a, h) {
   // If the action is from the mousedown event, do nothing.
-  if (a.toolConfig.toolState === 'down') {
+  if (a.toolConfig.state === 'down') {
     return;
   }
 
-  if (a.toolConfig.toolState === 'move' || a.toolConfig.toolState === 'up') {
+  if (a.toolConfig.state === 'move' || a.toolConfig.state === 'up') {
     const ctx = c.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'destination-out';
@@ -109,5 +109,5 @@ export const eraserDrawingCallback: ToolActionItemCallback = function eraserDraw
     return;
   }
 
-  throw Error(`Unrecognized Eraser Tool State: ${a.toolConfig.toolState}`);
+  throw Error(`Unrecognized Eraser Tool State: ${a.toolConfig.state}`);
 };

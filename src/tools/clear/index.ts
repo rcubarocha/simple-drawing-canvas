@@ -1,23 +1,21 @@
 import type {
   // eslint-disable-next-line no-unused-vars
-  CanvasTool, MouseEventToolCallback, ToolActionItemCallback, StrokeFillStyle, ICoords,
+  CanvasTool, MouseEventToolCallback, ToolActionItemCallback, ICoords,
 } from '../../canvas';
 
-interface ClearTool extends CanvasTool {
-  style: StrokeFillStyle
-}
+export type ClearTool = CanvasTool<'clear'>
 
-declare module '../../canvas' {
-  export interface CanvasTools {
-    clear?: ClearTool,
-  }
-}
-
-export const clearMouseEventCallback: MouseEventToolCallback = function clearMouseEventCallback(e, c, cc, tc, ah) {
+export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = function clearMouseEventCallback(
+  e,
+  c,
+  cc,
+  tc,
+  ah,
+) {
   const toolConfig = { ...tc };
 
   if (e.type === 'mousedown') {
-    toolConfig.toolState = 'down';
+    toolConfig.state = 'down';
     const { x, y } = c.getBoundingClientRect();
 
     const eCoords: ICoords = {
@@ -39,7 +37,7 @@ export const clearMouseEventCallback: MouseEventToolCallback = function clearMou
       return null;
     }
 
-    const prevToolState = ah[ah.length - 1].toolConfig.toolState;
+    const prevToolState = ah[ah.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down') {
       throw Error('Inconsistent Clear Tool State');
@@ -49,7 +47,7 @@ export const clearMouseEventCallback: MouseEventToolCallback = function clearMou
     if (e.target !== c) {
       throw Error('Up Event Outside Canvas');
     } else {
-      toolConfig.toolState = 'up';
+      toolConfig.state = 'up';
       const { x, y } = c.getBoundingClientRect();
 
       const eCoords: ICoords = {
@@ -70,13 +68,13 @@ export const clearMouseEventCallback: MouseEventToolCallback = function clearMou
   return null;
 };
 
-export const clearDrawingCallback: ToolActionItemCallback = function clearDrawingCallback(c, a) {
-  if (a.toolConfig.toolState === 'down') {
+export const clearDrawingCallback: ToolActionItemCallback<ClearTool> = function clearDrawingCallback(c, a) {
+  if (a.toolConfig.state === 'down') {
     // If the action is from the mousedown event, do nothing.
     return;
   }
 
-  if (a.toolConfig.toolState === 'up') {
+  if (a.toolConfig.state === 'up') {
     const ctx = c.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'source-over';
@@ -89,5 +87,5 @@ export const clearDrawingCallback: ToolActionItemCallback = function clearDrawin
     return;
   }
 
-  throw Error(`Unrecognized Clear Tool State: ${a.toolConfig.toolState}`);
+  throw Error(`Unrecognized Clear Tool State: ${a.toolConfig.state}`);
 };
