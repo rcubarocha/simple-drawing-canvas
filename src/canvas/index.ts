@@ -25,25 +25,42 @@ export interface CanvasTool<N extends string> {
   state: string
 }
 
-type CanvasActionItem<T extends CanvasTool<any>> = {
+type CanvasActionItem<T extends CanvasTool<string>> = {
   toolConfig: T,
   coords: ICoords,
 }
 
-type CanvasAction<T extends CanvasTool<any>> = CanvasActionItem<T>[]
+type CanvasAction<T extends CanvasTool<string>> = CanvasActionItem<T>[]
 
-interface CanvasHistory<T extends CanvasTool<any>> {
+interface CanvasHistory<T extends CanvasTool<string>> {
   actionsHistory: CanvasAction<T>[],
   undoHistory: CanvasAction<T>[],
-  historyIndex: number,
-  actionIndex: number,
 }
 
-type MouseEventToolCallbackResult<T extends CanvasTool<any>> = {
+export interface BaseCanvasController {
+  getCanvas(): HTMLCanvasElement;
+  undo(redraw?: boolean): void;
+  redo(redraw?: boolean): void;
+  playDrawing(): void;
+  getDataURL: HTMLCanvasElement['toDataURL']
+  setBackground(url: string): void;
+  setBackgroundFromElement(img: HTMLImageElement): void;
+  setBackgroundColor(color: string): void;
+  teardown(): void;
+}
+
+export type ToolActionItemCallback<T extends CanvasTool<string>> = (
+  canvas: HTMLCanvasElement,
+  action: CanvasActionItem<T>,
+  actionHistory: CanvasAction<T>
+) => void;
+
+type MouseEventToolCallbackResult<T extends CanvasTool<string>> = {
   endCurrentAction: boolean, canvasActionItem?: CanvasActionItem<T>
 };
 
-export type MouseEventToolCallback<T extends CanvasTool<any>> = (
+export type MouseEventToolCallback<T extends CanvasTool<string>> = (
+  this: BaseCanvasController,
   event: MouseEvent,
   canvas: HTMLCanvasElement,
   canvasConfig: CanvasConfig,
@@ -51,13 +68,25 @@ export type MouseEventToolCallback<T extends CanvasTool<any>> = (
   actionHistory: CanvasAction<T>,
 ) => MouseEventToolCallbackResult<T> | null;
 
-export type ToolActionItemCallback<T extends CanvasTool<any>> = (
-  canvas: HTMLCanvasElement,
-  action: CanvasActionItem<T>,
-  actionHistory: CanvasAction<T>
-) => void;
+interface IDrawingCanvasController<
+  N extends string,
+  T extends CanvasTool<N>,
+  M extends Record<N, T>
+> extends BaseCanvasController {
+  currentTool: N;
 
-export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, M extends Record<N, T>> {
+  addTool<K extends N>(
+    toolType: K,
+    eventCB: MouseEventToolCallback<M[K]>,
+    actionCB: ToolActionItemCallback<M[K]>,
+    initialConfig: M[K]): void;
+}
+
+export class DrawingCanvasController<
+  N extends string,
+  T extends CanvasTool<N>,
+  M extends Record<N, T>
+> implements IDrawingCanvasController<N, T, M> {
   private canvasElement: HTMLCanvasElement;
 
   private onTouchEventBound: (e: TouchEvent) => void;
@@ -88,8 +117,6 @@ export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, 
   private history: CanvasHistory<M[N]> = {
     actionsHistory: [],
     undoHistory: [],
-    historyIndex: 0,
-    actionIndex: 0,
   }
 
   static eventMap: { [K in keyof TouchEventsMap]: keyof MouseEventsMap } = {
@@ -183,10 +210,6 @@ export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, 
   }
 
   performAllCanvasActions(): void {
-    // const action: CanvasAction = { tool: 'clear' };
-
-    // this.performCanvasAction(action);
-
     this.clearCanvas();
 
     if (this.canvasConfig.background) {
@@ -208,23 +231,23 @@ export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, 
 
     this.clearCanvas();
 
-    this.history.historyIndex = 0;
-    this.history.actionIndex = 0;
+    let actionIndex = 0;
+    let actionItemIndex = 0;
 
     const interval = setInterval(() => {
       this.performCanvasAction(
-        this.history.actionsHistory[this.history.historyIndex][this.history.actionIndex],
-        this.history.actionsHistory[this.history.historyIndex].slice(0, this.history.actionIndex),
+        this.history.actionsHistory[actionIndex][actionItemIndex],
+        this.history.actionsHistory[actionIndex].slice(0, actionItemIndex),
       );
 
-      this.history.actionIndex += 1;
+      actionItemIndex += 1;
 
-      if (this.history.actionIndex >= this.history.actionsHistory[this.history.historyIndex].length) {
-        this.history.historyIndex += 1;
-        this.history.actionIndex = 0;
+      if (actionItemIndex >= this.history.actionsHistory[actionIndex].length) {
+        actionIndex += 1;
+        actionItemIndex = 0;
       }
 
-      if (this.history.historyIndex >= this.history.actionsHistory.length) {
+      if (actionIndex >= this.history.actionsHistory.length) {
         clearInterval(interval);
       }
     }, 5);
@@ -247,18 +270,23 @@ export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, 
 
   onCanvasEvent(e: MouseEvent): void {
     const callback = this.toolMouseEventCallbacks[this.currentTool];
+    const currentToolConfig = this.toolConfig[this.currentTool];
 
-    if (callback) {
+    if (callback && currentToolConfig) {
       try {
         const currentActionHistory = this.newActionNextEvent
           ? []
           : this.history.actionsHistory[this.history.actionsHistory.length - 1];
 
-        const res = callback(
+        const res = callback.call(
+          this,
           e,
           this.canvasElement,
           this.canvasConfig,
-          this.toolConfig[this.currentTool]!,
+          // Non-null assertion due to currentToolConfig still having undefined in type union
+          // despite non-null if-check above.
+          // TODO: Investigate further (TS bug?)
+          currentToolConfig!,
           currentActionHistory,
         );
 
@@ -339,9 +367,8 @@ export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, 
 
   reset(): void {
     this.history.actionsHistory = [];
-    this.history.historyIndex = 0;
 
-    this.setBackgroundColor('#ffffff');
+    this.clearCanvas();
   }
 
   teardown(): void {
@@ -377,7 +404,6 @@ export class DrawingCanvasController<N extends string, T extends CanvasTool<N>, 
 
     this.setBackgroundColor('#ffffff');
 
-    // w && (w.onresize = this.onWindowResize);
     if (w) {
       w.addEventListener('resize', this.onWindowResizeBound);
     }
