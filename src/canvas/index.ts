@@ -13,7 +13,7 @@ type TouchEventsMap = Pick<HTMLElementEventMap, 'touchstart' | 'touchmove' | 'to
 
 type MouseEventsMap = Pick<HTMLElementEventMap, 'mousedown' | 'mousemove' | 'mouseup'>
 
-interface CanvasConfig {
+export interface CanvasConfig {
   width: number,
   height: number,
   scale: number,
@@ -25,12 +25,12 @@ export interface CanvasTool<N extends string> {
   state: string
 }
 
-type CanvasActionItem<T extends CanvasTool<string>> = {
+type CanvasActionStep<T extends CanvasTool<string>> = {
   toolConfig: T,
   coords: ICoords,
 }
 
-type CanvasAction<T extends CanvasTool<string>> = CanvasActionItem<T>[]
+type CanvasAction<T extends CanvasTool<string>> = CanvasActionStep<T>[]
 
 interface CanvasHistory<T extends CanvasTool<string>> {
   actionsHistory: CanvasAction<T>[],
@@ -49,14 +49,14 @@ export interface BaseCanvasController {
   teardown(): void;
 }
 
-export type ToolActionItemCallback<T extends CanvasTool<string>> = (
+export type ToolActionStepCallback<T extends CanvasTool<string>> = (
   canvas: HTMLCanvasElement,
-  action: CanvasActionItem<T>,
+  action: CanvasActionStep<T>,
   actionHistory: CanvasAction<T>
 ) => void;
 
 type MouseEventToolCallbackResult<T extends CanvasTool<string>> = {
-  endCurrentAction: boolean, canvasActionItem?: CanvasActionItem<T>
+  endCurrentAction: boolean, canvasActionStep?: CanvasActionStep<T>
 };
 
 export type MouseEventToolCallback<T extends CanvasTool<string>> = (
@@ -78,7 +78,7 @@ interface IDrawingCanvasController<
   addTool<K extends N>(
     toolType: K,
     eventCB: MouseEventToolCallback<M[K]>,
-    actionCB: ToolActionItemCallback<M[K]>,
+    actionCB: ToolActionStepCallback<M[K]>,
     initialConfig: M[K]): void;
 }
 
@@ -128,7 +128,7 @@ export class DrawingCanvasController<
 
   toolMouseEventCallbacks: { [K in N]?: MouseEventToolCallback<M[K]> } = { }
 
-  toolActionItemCallbacks: { [K in N]?: ToolActionItemCallback<M[K]> } = { }
+  toolActionStepCallbacks: { [K in N]?: ToolActionStepCallback<M[K]> } = { }
 
   onCanvasFocus(e: TouchEvent): void {
     if (e.target === this.canvasElement) {
@@ -158,11 +158,11 @@ export class DrawingCanvasController<
   addTool<K extends N>(
     toolType: K,
     eventCB: MouseEventToolCallback<M[K]>,
-    actionCB: ToolActionItemCallback<M[K]>,
+    actionCB: ToolActionStepCallback<M[K]>,
     initialConfig: M[K],
   ): void {
     this.toolMouseEventCallbacks[toolType] = eventCB;
-    this.toolActionItemCallbacks[toolType] = actionCB;
+    this.toolActionStepCallbacks[toolType] = actionCB;
     this.toolConfig[toolType] = initialConfig;
   }
 
@@ -177,10 +177,10 @@ export class DrawingCanvasController<
     ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
   }
 
-  performCanvasAction(actionItem: CanvasActionItem<M[N]>, actionHistory: CanvasAction<M[N]>): void {
-    this.toolActionItemCallbacks[actionItem.toolConfig.name]?.(
+  performCanvasAction(actionStep: CanvasActionStep<M[N]>, actionHistory: CanvasAction<M[N]>): void {
+    this.toolActionStepCallbacks[actionStep.toolConfig.name]?.(
       this.canvasElement,
-      actionItem,
+      actionStep,
       actionHistory,
     );
   }
@@ -232,19 +232,19 @@ export class DrawingCanvasController<
     this.clearCanvas();
 
     let actionIndex = 0;
-    let actionItemIndex = 0;
+    let actionStepIndex = 0;
 
     const interval = setInterval(() => {
       this.performCanvasAction(
-        this.history.actionsHistory[actionIndex][actionItemIndex],
-        this.history.actionsHistory[actionIndex].slice(0, actionItemIndex),
+        this.history.actionsHistory[actionIndex][actionStepIndex],
+        this.history.actionsHistory[actionIndex].slice(0, actionStepIndex),
       );
 
-      actionItemIndex += 1;
+      actionStepIndex += 1;
 
-      if (actionItemIndex >= this.history.actionsHistory[actionIndex].length) {
+      if (actionStepIndex >= this.history.actionsHistory[actionIndex].length) {
         actionIndex += 1;
-        actionItemIndex = 0;
+        actionStepIndex = 0;
       }
 
       if (actionIndex >= this.history.actionsHistory.length) {
@@ -260,12 +260,12 @@ export class DrawingCanvasController<
     this.history.undoHistory = [];
   }
 
-  addNewActionItem(newAction: boolean, actionItem: CanvasActionItem<M[N]>): void {
+  addNewActionStep(newAction: boolean, actionStep: CanvasActionStep<M[N]>): void {
     if (newAction) {
       this.startNewAction();
     }
 
-    this.history.actionsHistory[this.history.actionsHistory.length - 1].push(actionItem);
+    this.history.actionsHistory[this.history.actionsHistory.length - 1].push(actionStep);
   }
 
   onCanvasEvent(e: MouseEvent): void {
@@ -286,16 +286,16 @@ export class DrawingCanvasController<
           // Non-null assertion due to currentToolConfig still having undefined in type union
           // despite non-null if-check above.
           // TODO: Investigate further (TS bug?)
-          currentToolConfig!,
+          { ...currentToolConfig! },
           currentActionHistory,
         );
 
         if (res) {
-          if (res.canvasActionItem) {
-            this.performCanvasAction(res.canvasActionItem, currentActionHistory);
+          if (res.canvasActionStep) {
+            this.performCanvasAction(res.canvasActionStep, currentActionHistory);
 
             // If the action was performed without throwing an error, commit the action to the history
-            this.addNewActionItem(this.newActionNextEvent, res.canvasActionItem);
+            this.addNewActionStep(this.newActionNextEvent, res.canvasActionStep);
           }
 
           this.newActionNextEvent = res.endCurrentAction;

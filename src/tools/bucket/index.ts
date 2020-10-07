@@ -1,65 +1,54 @@
 import type {
-  CanvasTool, MouseEventToolCallback, ToolActionItemCallback, StrokeFillStyle, ICoords,
+  CanvasTool, MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
 } from '../../canvas';
+import { getCanvasCoordsFromEvent } from '../../utils';
 
 export interface BucketTool extends CanvasTool<'bucket'> {
   style: StrokeFillStyle
 }
 
 export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = function bucketMouseEventCallback(
-  e,
-  c,
-  cc,
-  tc,
-  ah,
+  event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
-  const toolConfig = { ...tc };
+  const tc = toolConfig;
 
-  if (e.type === 'mousedown') {
-    toolConfig.state = 'down';
-    const { x, y } = c.getBoundingClientRect();
+  if (event.type === 'mousedown') {
+    tc.state = 'down';
 
-    const eCoords: ICoords = {
-      x: (e.clientX - x) * cc.scale,
-      y: (e.clientY - y) * cc.scale,
-    };
+    const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
       endCurrentAction: false,
-      canvasActionItem: {
-        toolConfig,
+      canvasActionStep: {
+        toolConfig: tc,
         coords: eCoords,
       },
     };
   }
 
-  if (e.type === 'mouseup') {
-    if (ah.length < 1) {
+  if (event.type === 'mouseup') {
+    if (actionHistory.length < 1) {
       return null;
     }
 
-    const prevToolState = ah[ah.length - 1].toolConfig.state;
+    const prevToolState = actionHistory[actionHistory.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down') {
       throw Error('Inconsistent State');
     }
 
     // If the mouse up event happens outside the canvas, invalidate the whole action
-    if (e.target !== c) {
+    if (event.target !== canvas) {
       throw Error('Up Event Outside Canvas');
     } else {
-      toolConfig.state = 'up';
-      const { x, y } = c.getBoundingClientRect();
+      tc.state = 'up';
 
-      const eCoords: ICoords = {
-        x: (e.clientX - x) * cc.scale,
-        y: (e.clientY - y) * cc.scale,
-      };
+      const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
       return {
         endCurrentAction: true,
-        canvasActionItem: {
-          toolConfig,
+        canvasActionStep: {
+          toolConfig: tc,
           coords: eCoords,
         },
       };
@@ -69,7 +58,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
   return null;
 };
 
-export const bucketDrawingCallback: ToolActionItemCallback<BucketTool> = function bucketDrawingCallback(c, a) {
+export const bucketDrawingCallback: ToolActionStepCallback<BucketTool> = function bucketDrawingCallback(c, a) {
   if (a.toolConfig.state === 'down') {
     // If the action is from the mousedown event, do nothing.
     return;

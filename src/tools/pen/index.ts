@@ -1,86 +1,75 @@
 import type {
-  // eslint-disable-next-line no-unused-vars
-  CanvasTool, MouseEventToolCallback, ToolActionItemCallback, StrokeFillStyle, ICoords,
+  CanvasTool, MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
 } from '../../canvas';
-import drawLine from '../../globals';
+import { drawLine, getCanvasCoordsFromEvent } from '../../utils';
 
 export interface PenTool extends CanvasTool<'pen'> {
   size: number,
   style: StrokeFillStyle
 }
 
-export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function penMouseEventCallback(e, c, cc, tc, ah) {
-  const toolConfig = { ...tc };
+export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function penMouseEventCallback(
+  event, canvas, canvasConfig, toolConfig, actionHistory,
+) {
+  const tc = toolConfig;
 
-  if (e.type === 'mousedown') {
-    toolConfig.state = 'down';
-    const { x, y } = c.getBoundingClientRect();
+  if (event.type === 'mousedown') {
+    tc.state = 'down';
 
-    const eCoords: ICoords = {
-      x: (e.clientX - x) * cc.scale,
-      y: (e.clientY - y) * cc.scale,
-    };
+    const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
       endCurrentAction: false,
-      canvasActionItem: {
-        toolConfig,
+      canvasActionStep: {
+        toolConfig: tc,
         coords: eCoords,
       },
     };
   }
 
-  if (e.type === 'mousemove') {
-    if (ah.length < 1) {
+  if (event.type === 'mousemove') {
+    if (actionHistory.length < 1) {
       return null;
     }
 
-    const prevToolState = ah[ah.length - 1].toolConfig.state;
+    const prevToolState = actionHistory[actionHistory.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
       throw Error('Inconsistent State');
     }
 
-    toolConfig.state = 'move';
-    const { x, y } = c.getBoundingClientRect();
+    tc.state = 'move';
 
-    const eCoords: ICoords = {
-      x: (e.clientX - x) * cc.scale,
-      y: (e.clientY - y) * cc.scale,
-    };
+    const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
       endCurrentAction: false,
-      canvasActionItem: {
-        toolConfig,
+      canvasActionStep: {
+        toolConfig: tc,
         coords: eCoords,
       },
     };
   }
 
-  if (e.type === 'mouseup') {
-    if (ah.length < 1) {
+  if (event.type === 'mouseup') {
+    if (actionHistory.length < 1) {
       return null;
     }
 
-    const prevToolState = ah[ah.length - 1].toolConfig.state;
+    const prevToolState = actionHistory[actionHistory.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
       throw Error('Inconsistent State');
     }
 
-    toolConfig.state = 'up';
-    const { x, y } = c.getBoundingClientRect();
+    tc.state = 'up';
 
-    const eCoords: ICoords = {
-      x: (e.clientX - x) * cc.scale,
-      y: (e.clientY - y) * cc.scale,
-    };
+    const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
       endCurrentAction: true,
-      canvasActionItem: {
-        toolConfig,
+      canvasActionStep: {
+        toolConfig: tc,
         coords: eCoords,
       },
     };
@@ -89,7 +78,7 @@ export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function p
   throw Error('Inconsistent Pen Tool State');
 };
 
-export const penDrawingCallback: ToolActionItemCallback<PenTool> = function penDrawingCallback(c, a, h) {
+export const penDrawingCallback: ToolActionStepCallback<PenTool> = function penDrawingCallback(c, a, h) {
   // If the action is from the mousedown event, do nothing.
   if (a.toolConfig.state === 'down') {
     return;
