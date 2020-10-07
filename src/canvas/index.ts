@@ -301,8 +301,11 @@ export class DrawingCanvasController<
           this.newActionNextEvent = res.endCurrentAction;
         }
       } catch (err) {
-        // On error, delete the latest Action as it likely has an inconsistent state that will continue producing errors
-        this.history.actionsHistory.pop();
+        // On error, delete the current Action as it likely has an inconsistent state that will continue producing errors
+        if (!this.newActionNextEvent) {
+          this.history.actionsHistory.pop();
+          this.newActionNextEvent = true;
+        }
       }
     }
   }
