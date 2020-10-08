@@ -1,14 +1,17 @@
 import type {
-  CanvasTool, MouseEventToolCallback, ToolActionStepCallback,
+  MouseEventToolCallback, ToolActionStepCallback, ToolWithState,
 } from '../../canvas';
 import { getCanvasCoordsFromEvent } from '../../utils';
 
-export type ClearTool = CanvasTool<'clear'>
+export type ClearTool = Record<string, unknown>
 
 export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = function clearMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
-  const tc = toolConfig;
+  const tc: ToolWithState<ClearTool> = {
+    ...toolConfig,
+    state: '',
+  };
 
   if (event.type === 'mousedown') {
     tc.state = 'down';
@@ -17,7 +20,7 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
 
     return {
       endCurrentAction: false,
-      canvasActionStep: {
+      actionStep: {
         toolConfig: tc,
         coords: eCoords,
       },
@@ -25,11 +28,11 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
   }
 
   if (event.type === 'mouseup') {
-    if (actionHistory.length < 1) {
+    if (actionHistory.steps.length < 1) {
       return null;
     }
 
-    const prevToolState = actionHistory[actionHistory.length - 1].toolConfig.state;
+    const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down') {
       throw Error('Inconsistent Clear Tool State');
@@ -45,7 +48,7 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
 
       return {
         endCurrentAction: true,
-        canvasActionStep: {
+        actionStep: {
           toolConfig: tc,
           coords: eCoords,
         },

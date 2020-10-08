@@ -1,16 +1,19 @@
 import type {
-  CanvasTool, MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
+  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle, ToolWithState,
 } from '../../canvas';
 import { getCanvasCoordsFromEvent } from '../../utils';
 
-export interface BucketTool extends CanvasTool<'bucket'> {
+export interface BucketTool {
   style: StrokeFillStyle
 }
 
 export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = function bucketMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
-  const tc = toolConfig;
+  const tc: ToolWithState<BucketTool> = {
+    ...toolConfig,
+    state: '',
+  };
 
   if (event.type === 'mousedown') {
     tc.state = 'down';
@@ -19,7 +22,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
 
     return {
       endCurrentAction: false,
-      canvasActionStep: {
+      actionStep: {
         toolConfig: tc,
         coords: eCoords,
       },
@@ -27,11 +30,11 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
   }
 
   if (event.type === 'mouseup') {
-    if (actionHistory.length < 1) {
+    if (actionHistory.steps.length < 1) {
       return null;
     }
 
-    const prevToolState = actionHistory[actionHistory.length - 1].toolConfig.state;
+    const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].toolConfig.state;
 
     if (prevToolState !== 'down') {
       throw Error('Inconsistent State');
@@ -47,7 +50,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
 
       return {
         endCurrentAction: true,
-        canvasActionStep: {
+        actionStep: {
           toolConfig: tc,
           coords: eCoords,
         },
