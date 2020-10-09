@@ -20,26 +20,24 @@ export interface CanvasConfig {
   background: HTMLImageElement | null,
 }
 
-export interface CanvasActionStepToolState {
-  state: string,
-}
-
+// TODO: Research a possible better base than Record<string, any> as this
+// allows for the object to allow any key to be referenced without errors
+// even for interfaces extending it (e.g. PenTool)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ToolConfig = Record<string, any>
 
-export type ToolWithState<T extends ToolConfig> = T & CanvasActionStepToolState
-
-type CanvasActionStep<T extends CanvasActionStepToolState> = {
-  toolConfig: T,
+export type CanvasActionStep<T extends ToolConfig> = {
+  tool: T,
   coords: ICoords,
+  state: string,
 }
 
-type CanvasAction<N extends string, T extends CanvasActionStepToolState> = {
+type CanvasAction<N extends string, T extends ToolConfig> = {
   tool: N,
   steps: CanvasActionStep<T>[],
 }
 
-interface CanvasHistory<N extends string, T extends CanvasActionStepToolState> {
+interface CanvasHistory<N extends string, T extends ToolConfig> {
   actionsHistory: CanvasAction<N, T>[],
   undoHistory: CanvasAction<N, T>[],
 }
@@ -58,11 +56,11 @@ export interface BaseCanvasController {
 
 export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
   canvas: HTMLCanvasElement,
-  actionStep: CanvasActionStep<ToolWithState<T>>,
-  actionHistory: CanvasAction<N, ToolWithState<T>>
+  actionStep: CanvasActionStep<T>,
+  actionHistory: CanvasAction<N, T>
 ) => void;
 
-type MouseEventToolCallbackResult<T extends CanvasActionStepToolState> = {
+type MouseEventToolCallbackResult<T extends ToolConfig> = {
   endCurrentAction: boolean, actionStep?: CanvasActionStep<T>
 };
 
@@ -73,8 +71,8 @@ export type MouseEventToolCallback<T extends ToolConfig> = <N extends string>(
   canvas: HTMLCanvasElement,
   canvasConfig: CanvasConfig,
   toolConfig: T,
-  actionHistory: CanvasAction<N, ToolWithState<T>>,
-) => MouseEventToolCallbackResult<ToolWithState<T>> | null;
+  actionHistory: CanvasAction<N, T>,
+) => MouseEventToolCallbackResult<T> | null;
 
 interface IDrawingCanvasController<
   N extends string,
@@ -85,7 +83,7 @@ interface IDrawingCanvasController<
   addTool<K extends N>(
     toolType: K,
     eventCB: MouseEventToolCallback<M[K]>,
-    actionCB: ToolActionStepCallback<M[K] & CanvasActionStepToolState>,
+    actionCB: ToolActionStepCallback<M[K]>,
     initialConfig: M[K]): void;
 }
 
@@ -120,7 +118,7 @@ export class DrawingCanvasController<
 
   toolConfig: { [K in N]?: M[K] } = {}
 
-  private history: CanvasHistory<N, M[N] & CanvasActionStepToolState> = {
+  private history: CanvasHistory<N, M[N]> = {
     actionsHistory: [],
     undoHistory: [],
   }
@@ -134,7 +132,7 @@ export class DrawingCanvasController<
 
   toolMouseEventCallbacks: { [K in N]?: MouseEventToolCallback<M[K]> } = { }
 
-  toolActionStepCallbacks: { [K in N]?: ToolActionStepCallback<M[K] & CanvasActionStepToolState> } = { }
+  toolActionStepCallbacks: { [K in N]?: ToolActionStepCallback<M[K]> } = { }
 
   onCanvasFocus(e: TouchEvent): void {
     if (e.target === this.canvasElement) {
@@ -164,7 +162,7 @@ export class DrawingCanvasController<
   addTool<K extends N>(
     toolType: K,
     eventCB: MouseEventToolCallback<M[K]>,
-    actionCB: ToolActionStepCallback<M[K] & CanvasActionStepToolState>,
+    actionCB: ToolActionStepCallback<M[K]>,
     initialConfig: M[K],
   ): void {
     this.toolMouseEventCallbacks[toolType] = eventCB;
@@ -184,8 +182,8 @@ export class DrawingCanvasController<
   }
 
   performCanvasAction(
-    actionStep: CanvasActionStep<M[N] & CanvasActionStepToolState>,
-    actionHistory: CanvasAction<N, M[N] & CanvasActionStepToolState>,
+    actionStep: CanvasActionStep<M[N]>,
+    actionHistory: CanvasAction<N, M[N]>,
   ): void {
     this.toolActionStepCallbacks[actionHistory.tool]?.(
       this.canvasElement,
@@ -275,7 +273,7 @@ export class DrawingCanvasController<
   addNewActionStep<K extends N>(
     newAction: boolean,
     tool: K,
-    actionStep: CanvasActionStep<M[K] & CanvasActionStepToolState>,
+    actionStep: CanvasActionStep<M[K]>,
   ): void {
     if (newAction) {
       this.startNewAction(tool);
