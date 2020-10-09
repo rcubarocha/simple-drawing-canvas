@@ -1,9 +1,9 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, ToolWithState,
+  MouseEventToolCallback, ToolActionStepCallback, ToolConfig, ToolWithState,
 } from '../../canvas';
 import { getCanvasCoordsFromEvent } from '../../utils';
 
-export type ClearTool = Record<string, unknown>
+export type ClearTool = ToolConfig
 
 export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = function clearMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,

@@ -25,7 +25,9 @@ export interface CanvasActionStepToolState {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ToolWithState<T extends Record<string, any>> = T & CanvasActionStepToolState
+export type ToolConfig = Record<string, any>
+
+export type ToolWithState<T extends ToolConfig> = T & CanvasActionStepToolState
 
 type CanvasActionStep<T extends CanvasActionStepToolState> = {
   toolConfig: T,
@@ -54,11 +56,10 @@ export interface BaseCanvasController {
   teardown(): void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ToolActionStepCallback<T extends Record<string, any>> = <N extends string>(
+export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
   canvas: HTMLCanvasElement,
-  actionStep: CanvasActionStep<T & CanvasActionStepToolState>,
-  actionHistory: CanvasAction<N, T & CanvasActionStepToolState>
+  actionStep: CanvasActionStep<ToolWithState<T>>,
+  actionHistory: CanvasAction<N, ToolWithState<T>>
 ) => void;
 
 type MouseEventToolCallbackResult<T extends CanvasActionStepToolState> = {
@@ -66,19 +67,18 @@ type MouseEventToolCallbackResult<T extends CanvasActionStepToolState> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type MouseEventToolCallback<T extends Record<string, any>> = <N extends string>(
+export type MouseEventToolCallback<T extends ToolConfig> = <N extends string>(
   this: BaseCanvasController,
   event: MouseEvent,
   canvas: HTMLCanvasElement,
   canvasConfig: CanvasConfig,
   toolConfig: T,
-  actionHistory: CanvasAction<N, T & CanvasActionStepToolState>,
-) => MouseEventToolCallbackResult<T & CanvasActionStepToolState> | null;
+  actionHistory: CanvasAction<N, ToolWithState<T>>,
+) => MouseEventToolCallbackResult<ToolWithState<T>> | null;
 
 interface IDrawingCanvasController<
   N extends string,
-  T extends Record<string, any>,
-  M extends Record<N, T>
+  M extends Record<N, ToolConfig>
 > extends BaseCanvasController {
   currentTool: N;
 
@@ -91,9 +91,8 @@ interface IDrawingCanvasController<
 
 export class DrawingCanvasController<
   N extends string,
-  T extends Record<string, any>,
-  M extends Record<N, T>
-> implements IDrawingCanvasController<N, T, M> {
+  M extends Record<N, ToolConfig>
+> implements IDrawingCanvasController<N, M> {
   private canvasElement: HTMLCanvasElement;
 
   private onTouchEventBound: (e: TouchEvent) => void;

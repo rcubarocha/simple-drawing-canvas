@@ -1,9 +1,9 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle, ToolWithState,
+  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle, ToolWithState, ToolConfig,
 } from '../../canvas';
 import { getCanvasCoordsFromEvent } from '../../utils';
 
-export interface BucketTool {
+export interface BucketTool extends ToolConfig {
   style: StrokeFillStyle
 }
 

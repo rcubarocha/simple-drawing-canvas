@@ -1,9 +1,9 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, ToolWithState,
+  MouseEventToolCallback, ToolActionStepCallback, ToolConfig, ToolWithState,
 } from '../../canvas';
 import { drawLine, getCanvasCoordsFromEvent } from '../../utils';
 
-export interface EraserTool {
+export interface EraserTool extends ToolConfig{
   size: number,
 }
 

@@ -1,9 +1,9 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle, ToolWithState,
+  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle, ToolWithState, ToolConfig,
 } from '../../canvas';
 import { drawLine, getCanvasCoordsFromEvent } from '../../utils';
 
-export interface PenTool {
+export interface PenTool extends ToolConfig {
   size: number,
   style: StrokeFillStyle
 }
