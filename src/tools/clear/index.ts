@@ -20,6 +20,7 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
         coords: eCoords,
         state,
       },
+      replacePrevStep: false,
     };
   }
 
@@ -49,6 +50,7 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
           coords: eCoords,
           state,
         },
+        replacePrevStep: false,
       };
     }
   }

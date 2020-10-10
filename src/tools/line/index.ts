@@ -3,12 +3,12 @@ import type {
 } from '../../canvas';
 import { drawLine, getCanvasCoordsFromEvent } from '../../utils';
 
-export interface PenTool extends ToolConfig {
+export interface LineTool extends ToolConfig {
   size: number,
   style: StrokeFillStyle
 }
 
-export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function penMouseEventCallback(
+export const lineMouseEventCallback: MouseEventToolCallback<LineTool> = function lineMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
   if (event.type === 'mousedown') {
@@ -49,7 +49,7 @@ export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function p
         coords: eCoords,
         state,
       },
-      replacePrevStep: false,
+      replacePrevStep: prevToolState === 'move',
     };
   }
 
@@ -75,14 +75,14 @@ export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function p
         coords: eCoords,
         state,
       },
-      replacePrevStep: false,
+      replacePrevStep: true,
     };
   }
 
   throw Error('Inconsistent Pen Tool State');
 };
 
-export const penDrawingCallback: ToolActionStepCallback<PenTool> = function penDrawingCallback(c, a, h) {
+export const lineDrawingCallback: ToolActionStepCallback<LineTool> = function lineDrawingCallback(c, a, h) {
   // If the action is from the mousedown event, do nothing.
   if (a.state === 'down') {
     return;

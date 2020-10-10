@@ -22,6 +22,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
         coords: eCoords,
         state,
       },
+      replacePrevStep: false,
     };
   }
 
@@ -51,6 +52,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
           coords: eCoords,
           state,
         },
+        replacePrevStep: false,
       };
     }
   }

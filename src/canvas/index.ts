@@ -61,7 +61,9 @@ export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
 ) => void;
 
 type MouseEventToolCallbackResult<T extends ToolConfig> = {
-  endCurrentAction: boolean, actionStep?: CanvasActionStep<T>
+  endCurrentAction: boolean,
+  replacePrevStep: boolean,
+  actionStep?: CanvasActionStep<T>,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,7 +78,7 @@ export type MouseEventToolCallback<T extends ToolConfig> = <N extends string>(
 
 interface IDrawingCanvasController<
   N extends string,
-  M extends Record<N, ToolConfig>
+  M extends { [key in N]: ToolConfig }
 > extends BaseCanvasController {
   currentTool: N;
 
@@ -89,7 +91,7 @@ interface IDrawingCanvasController<
 
 export class DrawingCanvasController<
   N extends string,
-  M extends Record<N, ToolConfig>
+  M extends { [key in N]: ToolConfig }
 > implements IDrawingCanvasController<N, M> {
   private canvasElement: HTMLCanvasElement;
 
@@ -200,7 +202,7 @@ export class DrawingCanvasController<
     }
 
     if (redraw) {
-      this.performAllCanvasActions();
+      this.performAllCanvasActions(this.history.actionsHistory);
     }
   }
 
@@ -212,21 +214,23 @@ export class DrawingCanvasController<
     }
 
     if (redraw) {
-      this.performAllCanvasActions();
+      this.performAllCanvasActions(this.history.actionsHistory);
     }
   }
 
-  performAllCanvasActions(): void {
+  performAllCanvasActions(actions: CanvasAction<N, M[N]>[], skipLastStep = false): void {
     this.clearCanvas();
 
     if (this.canvasConfig.background) {
       this.setBackgroundFromElement(this.canvasConfig.background);
     }
 
-    this.history.actionsHistory.forEach((ca) => {
-      ca.steps.forEach((cai, j) => {
-        // Slicing here may be inefficient
-        this.performCanvasAction(cai, { tool: ca.tool, steps: ca.steps.slice(0, j) });
+    actions.forEach((act, actIndex) => {
+      act.steps.forEach((step, stepIndex) => {
+        if (!skipLastStep || (actIndex !== actions.length - 1 || stepIndex !== act.steps.length - 1)) {
+          // Slicing here may be inefficient
+          this.performCanvasAction(step, { tool: act.tool, steps: act.steps.slice(0, stepIndex) });
+        }
       });
     });
   }
@@ -270,16 +274,23 @@ export class DrawingCanvasController<
     this.history.undoHistory = [];
   }
 
-  addNewActionStep<K extends N>(
+  commitNewActionStep<K extends N>(
     newAction: boolean,
     tool: K,
     actionStep: CanvasActionStep<M[K]>,
+    replacePrevStep: boolean,
   ): void {
     if (newAction) {
       this.startNewAction(tool);
     }
 
-    this.history.actionsHistory[this.history.actionsHistory.length - 1].steps.push(actionStep);
+    const currentAction = this.history.actionsHistory[this.history.actionsHistory.length - 1];
+
+    if (replacePrevStep) {
+      currentAction.steps[currentAction.steps.length - 1] = actionStep;
+    } else {
+      currentAction.steps.push(actionStep);
+    }
   }
 
   onCanvasEvent(e: MouseEvent): void {
@@ -306,10 +317,23 @@ export class DrawingCanvasController<
 
         if (res) {
           if (res.actionStep) {
-            this.performCanvasAction(res.actionStep, currentActionHistory);
+            if (res.replacePrevStep) {
+              this.performAllCanvasActions(this.history.actionsHistory, true);
 
-            // If the action was performed without throwing an error, commit the action to the history
-            this.addNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep);
+              const withoutPrevStep: CanvasAction<N, M[N]> = {
+                tool: currentActionHistory.tool,
+                steps: [...currentActionHistory.steps.slice(0, currentActionHistory.steps.length - 1)],
+              };
+
+              this.performCanvasAction(res.actionStep, withoutPrevStep);
+
+              this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, true);
+            } else {
+              this.performCanvasAction(res.actionStep, currentActionHistory);
+
+              // If the action was performed without throwing an error, commit the action to the history
+              this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, false);
+            }
           }
 
           this.newActionNextEvent = res.endCurrentAction;

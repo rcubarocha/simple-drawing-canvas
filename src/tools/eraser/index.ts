@@ -22,6 +22,7 @@ export const eraserMouseEventCallback: MouseEventToolCallback<EraserTool> = func
         coords: eCoords,
         state,
       },
+      replacePrevStep: false,
     };
   }
 
@@ -47,6 +48,7 @@ export const eraserMouseEventCallback: MouseEventToolCallback<EraserTool> = func
         coords: eCoords,
         state,
       },
+      replacePrevStep: false,
     };
   }
 
@@ -72,6 +74,7 @@ export const eraserMouseEventCallback: MouseEventToolCallback<EraserTool> = func
         coords: eCoords,
         state,
       },
+      replacePrevStep: false,
     };
   }
 
