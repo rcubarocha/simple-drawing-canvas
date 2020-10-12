@@ -20,9 +20,9 @@ export interface CanvasConfig {
   background: HTMLImageElement | null,
 }
 
-// TODO: Research a possible better base than Record<string, any> as this
-// allows for the object to allow any key to be referenced without errors
-// even for interfaces extending it (e.g. PenTool)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EmptyToolConfig = Record<any, never>
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ToolConfig = Record<string, any>
 
