@@ -19,7 +19,7 @@ export const lineMouseEventCallback: MouseEventToolCallback<LineTool> = function
     return {
       endCurrentAction: false,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },
@@ -45,7 +45,7 @@ export const lineMouseEventCallback: MouseEventToolCallback<LineTool> = function
     return {
       endCurrentAction: false,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },
@@ -71,7 +71,7 @@ export const lineMouseEventCallback: MouseEventToolCallback<LineTool> = function
     return {
       endCurrentAction: true,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },

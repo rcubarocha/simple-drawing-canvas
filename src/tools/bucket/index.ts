@@ -18,7 +18,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
     return {
       endCurrentAction: false,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },
@@ -48,7 +48,7 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
       return {
         endCurrentAction: true,
         actionStep: {
-          tool: { ...toolConfig },
+          tool: toolConfig,
           coords: eCoords,
           state,
         },

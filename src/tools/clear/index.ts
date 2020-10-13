@@ -17,7 +17,7 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
     return {
       endCurrentAction: false,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },
@@ -47,7 +47,7 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
       return {
         endCurrentAction: true,
         actionStep: {
-          tool: { ...toolConfig },
+          tool: toolConfig,
           coords: eCoords,
           state,
         },

@@ -1,3 +1,5 @@
+import cloneDeep from 'lodash/cloneDeep';
+
 export interface ICoords {
   x: number,
   y: number,
@@ -66,7 +68,6 @@ type MouseEventToolCallbackResult<T extends ToolConfig> = {
   actionStep?: CanvasActionStep<T>,
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type MouseEventToolCallback<T extends ToolConfig> = <N extends string>(
   this: BaseCanvasController,
   event: MouseEvent,
@@ -299,7 +300,7 @@ export class DrawingCanvasController<
 
     if (callback && currentToolConfig) {
       try {
-        const currentActionHistory = this.newActionNextEvent
+        const currentActionHistory: CanvasAction<N, M[N]> = this.newActionNextEvent
           ? { tool: this.currentTool, steps: [] }
           : this.history.actionsHistory[this.history.actionsHistory.length - 1];
 
@@ -307,11 +308,11 @@ export class DrawingCanvasController<
           this,
           e,
           this.canvasElement,
-          this.canvasConfig,
+          cloneDeep(this.canvasConfig),
           // Non-null assertion due to currentToolConfig still having undefined in type union
           // despite non-null if-check above.
           // TODO: Investigate further (TS bug?)
-          { ...currentToolConfig! },
+          cloneDeep(currentToolConfig!),
           currentActionHistory,
         );
 

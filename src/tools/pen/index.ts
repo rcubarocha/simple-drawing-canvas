@@ -19,7 +19,7 @@ export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function p
     return {
       endCurrentAction: false,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },
@@ -45,7 +45,7 @@ export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function p
     return {
       endCurrentAction: false,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },
@@ -71,7 +71,7 @@ export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function p
     return {
       endCurrentAction: true,
       actionStep: {
-        tool: { ...toolConfig },
+        tool: toolConfig,
         coords: eCoords,
         state,
       },
