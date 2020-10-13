@@ -77,23 +77,10 @@ export type MouseEventToolCallback<T extends ToolConfig> = <N extends string>(
   actionHistory: CanvasAction<N, T>,
 ) => MouseEventToolCallbackResult<T> | null;
 
-interface IDrawingCanvasController<
-  N extends string,
-  M extends { [key in N]: ToolConfig }
-> extends BaseCanvasController {
-  currentTool: N;
-
-  addTool<K extends N>(
-    toolType: K,
-    eventCB: MouseEventToolCallback<M[K]>,
-    actionCB: ToolActionStepCallback<M[K]>,
-    initialConfig: M[K]): void;
-}
-
 export class DrawingCanvasController<
   N extends string,
   M extends { [key in N]: ToolConfig }
-> implements IDrawingCanvasController<N, M> {
+> {
   private canvasElement: HTMLCanvasElement;
 
   private onTouchEventBound: (e: TouchEvent) => void;
@@ -119,7 +106,7 @@ export class DrawingCanvasController<
 
   currentTool: N
 
-  toolConfig: { [K in N]?: M[K] } = {}
+  private toolConfig: { [K in N]?: M[K] } = {}
 
   private history: CanvasHistory<N, M[N]> = {
     actionsHistory: [],
@@ -133,11 +120,11 @@ export class DrawingCanvasController<
     touchcancel: 'mouseup',
   }
 
-  toolMouseEventCallbacks: { [K in N]?: MouseEventToolCallback<M[K]> } = { }
+  private toolMouseEventCallbacks: { [K in N]?: MouseEventToolCallback<M[K]> } = { }
 
-  toolActionStepCallbacks: { [K in N]?: ToolActionStepCallback<M[K]> } = { }
+  private toolActionStepCallbacks: { [K in N]?: ToolActionStepCallback<M[K]> } = { }
 
-  onCanvasFocus(e: TouchEvent): void {
+  private onCanvasFocus(e: TouchEvent): void {
     if (e.target === this.canvasElement) {
       e.preventDefault();
     }
@@ -184,7 +171,7 @@ export class DrawingCanvasController<
     ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
   }
 
-  performCanvasAction(
+  private performCanvasAction(
     actionStep: CanvasActionStep<M[N]>,
     actionHistory: CanvasAction<N, M[N]>,
   ): void {
@@ -219,7 +206,7 @@ export class DrawingCanvasController<
     }
   }
 
-  performAllCanvasActions(actions: CanvasAction<N, M[N]>[], skipLastStep = false): void {
+  private performAllCanvasActions(actions: CanvasAction<N, M[N]>[], skipLastStep = false): void {
     this.clearCanvas();
 
     if (this.canvasConfig.background) {
@@ -268,14 +255,14 @@ export class DrawingCanvasController<
     }, 5);
   }
 
-  startNewAction(tool: N): void {
+  private startNewAction(tool: N): void {
     this.history.actionsHistory.push({ tool, steps: [] });
 
     // Clear Undo history when a new action is started
     this.history.undoHistory = [];
   }
 
-  commitNewActionStep<K extends N>(
+  private commitNewActionStep<K extends N>(
     newAction: boolean,
     tool: K,
     actionStep: CanvasActionStep<M[K]>,
@@ -294,7 +281,7 @@ export class DrawingCanvasController<
     }
   }
 
-  onCanvasEvent(e: MouseEvent): void {
+  private onCanvasEvent(e: MouseEvent): void {
     const callback = this.toolMouseEventCallbacks[this.currentTool];
     const currentToolConfig = this.toolConfig[this.currentTool];
 
@@ -349,7 +336,7 @@ export class DrawingCanvasController<
     }
   }
 
-  onTouchEvent(e: TouchEvent): void {
+  private onTouchEvent(e: TouchEvent): void {
     const me = new MouseEvent(DrawingCanvasController.eventMap[e.type as keyof TouchEventsMap], {
       clientX: e.changedTouches[0].clientX,
       clientY: e.changedTouches[0].clientY,
@@ -370,7 +357,7 @@ export class DrawingCanvasController<
     }
   }
 
-  onWindowResize(): void {
+  private onWindowResize(): void {
     this.canvasConfig.scale = this.canvasConfig.width / this.canvasElement.offsetWidth;
 
     this.canvasElement.style.height = `${this.canvasConfig.height / this.canvasConfig.scale}px`;
