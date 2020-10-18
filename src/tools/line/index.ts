@@ -79,7 +79,7 @@ export const lineMouseEventCallback: MouseEventToolCallback<LineTool> = function
     };
   }
 
-  throw Error('Inconsistent Pen Tool State');
+  throw Error('Inconsistent Line Tool State');
 };
 
 export const lineDrawingCallback: ToolActionStepCallback<LineTool> = function lineDrawingCallback(c, a, h) {
@@ -98,5 +98,5 @@ export const lineDrawingCallback: ToolActionStepCallback<LineTool> = function li
     return;
   }
 
-  throw Error(`Unrecognized Pen Tool State: ${a.state}`);
+  throw Error(`Unrecognized Line Tool State: ${a.state}`);
 };

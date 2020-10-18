@@ -34,7 +34,7 @@ export type CanvasActionStep<T extends ToolConfig> = {
   state: string,
 }
 
-type CanvasAction<N extends string, T extends ToolConfig> = {
+export type CanvasAction<N extends string, T extends ToolConfig> = {
   tool: N,
   steps: CanvasActionStep<T>[],
 }
@@ -62,7 +62,7 @@ export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
   actionHistory: CanvasAction<N, T>
 ) => void;
 
-type MouseEventToolCallbackResult<T extends ToolConfig> = {
+export type MouseEventToolCallbackResult<T extends ToolConfig> = {
   endCurrentAction: boolean,
   replacePrevStep: boolean,
   actionStep?: CanvasActionStep<T>,

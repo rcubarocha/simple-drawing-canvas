@@ -1,10 +1,11 @@
 import type {
-  EmptyToolConfig,
-  MouseEventToolCallback, ToolActionStepCallback,
+  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
 } from '../../canvas';
 import { getCanvasCoordsFromEvent } from '../../utils';
 
-export type ClearTool = EmptyToolConfig
+export interface ClearTool {
+  fill?: StrokeFillStyle
+}
 
 export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = function clearMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
@@ -72,8 +73,10 @@ export const clearDrawingCallback: ToolActionStepCallback<ClearTool> = function 
 
     ctx.clearRect(0, 0, c.width, c.height);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, c.width, c.height);
+    if (a.tool.fill) {
+      ctx.fillStyle = a.tool.fill;
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
 
     return;
   }

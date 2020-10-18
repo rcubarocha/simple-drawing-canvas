@@ -71,6 +71,7 @@
   ],
   "exclude": [
     "node_modules",
-    ".eslintrc.js"
+    ".eslintrc.js",
+    "src/**/*.test.ts"
   ]
 }

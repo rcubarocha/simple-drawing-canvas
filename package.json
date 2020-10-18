@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "rm -rf ./dist && tsc",
     "build:watch": "rm -rf ./dist && tsc -w",
     "build:types": "tsc -p tsconfig.types.json",
@@ -22,12 +22,31 @@
     "lodash": "^4.17.20"
   },
   "devDependencies": {
+    "@types/jest": "^26.0.14",
     "@types/lodash": "^4.14.162",
     "@typescript-eslint/eslint-plugin": "^4.3.0",
     "@typescript-eslint/parser": "^4.3.0",
+    "canvas": "^2.6.1",
     "eslint": "^7.6.0",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-plugin-import": "^2.22.0",
+    "jest": "^26.5.3",
+    "ts-jest": "^26.4.1",
     "typescript": "^3.9.7"
+  },
+  "jest": {
+    "globals": {
+      "ts-jest": {
+        "tsConfig": "tsconfig.test.json"
+      }
+    },
+    "transform": {
+      "^.+\\.ts?$": "ts-jest"
+    },
+    "testRegex": ".*\\.(test|spec)?\\.ts$",
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ]
   }
 }

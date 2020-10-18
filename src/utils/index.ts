@@ -1,4 +1,4 @@
-import { ICoords, StrokeFillStyle, CanvasConfig } from './canvas';
+import { ICoords, StrokeFillStyle, CanvasConfig } from '../canvas';
 
 export const drawLine = function drawLine(
   ctx: CanvasRenderingContext2D,
@@ -7,13 +7,13 @@ export const drawLine = function drawLine(
   width: number,
   style: StrokeFillStyle,
 ): void {
-  ctx.beginPath();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.lineWidth = width;
+  ctx.strokeStyle = style;
+  ctx.beginPath();
   ctx.moveTo(from.x, from.y);
   ctx.lineTo(to.x, to.y);
-  ctx.strokeStyle = style;
   ctx.stroke();
   ctx.closePath();
 };
