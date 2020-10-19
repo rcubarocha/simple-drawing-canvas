@@ -1,5 +1,19 @@
 import cloneDeep from 'lodash/cloneDeep';
 
+export class UnknownToolError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnknownToolError';
+  }
+}
+
+export class CurrentToolNotAssignedError extends Error {
+  constructor() {
+    super('No tool selected. Please set current tool using setCurrentTool()');
+    this.name = 'CurrentToolNotAssignedError';
+  }
+}
+
 export interface ICoords {
   x: number,
   y: number,
@@ -103,7 +117,7 @@ export class DrawingCanvasController<
 
   private newActionNextEvent = true;
 
-  currentTool: N
+  private currentTool: N | null = null;
 
   private toolConfig: { [K in N]?: M[K] } = {}
 
@@ -133,14 +147,12 @@ export class DrawingCanvasController<
     canvasElement: HTMLCanvasElement,
     width: number,
     height: number,
-    startTool: N,
     background: CanvasConfig['background'] = null,
   ) {
     this.canvasElement = canvasElement;
     this.canvasConfig.width = width;
     this.canvasConfig.height = height;
     this.canvasConfig.background = background;
-    this.currentTool = startTool;
 
     this.onCanvasFocusBound = this.onCanvasFocus.bind(this);
     this.onCanvasEventBound = this.onCanvasEvent.bind(this);
@@ -148,6 +160,22 @@ export class DrawingCanvasController<
     this.onWindowResizeBound = this.onWindowResize.bind(this);
 
     this.initCanvas();
+  }
+
+  getCurrentTool(): N {
+    if (this.currentTool == null) {
+      throw new CurrentToolNotAssignedError();
+    }
+
+    return this.currentTool;
+  }
+
+  setCurrentTool<K extends N>(tool: K): void {
+    if (!(tool in this.toolConfig)) {
+      throw new UnknownToolError(`'${tool}' is not registered as a tool`);
+    }
+
+    this.currentTool = tool;
   }
 
   addTool<K extends N>(
@@ -159,6 +187,24 @@ export class DrawingCanvasController<
     this.toolMouseEventCallbacks[toolType] = eventCB;
     this.toolActionStepCallbacks[toolType] = actionCB;
     this.toolConfig[toolType] = initialConfig;
+  }
+
+  setToolConfig<K extends N>(tool: K, config: M[K]): void {
+    if (!(tool in this.toolConfig)) {
+      throw new UnknownToolError(`'${tool}' is not registered as a tool`);
+    }
+
+    this.toolConfig[tool] = config;
+  }
+
+  setToolConfigs(config: { [K in N]?: M[K] }): void {
+    const paramKeys = Object.keys(config);
+
+    if (!(paramKeys.every((c) => c in this.toolConfig))) {
+      throw new UnknownToolError(`At least some of [${paramKeys.join(',')}]' are not registered as tools`);
+    }
+
+    this.toolConfig = config;
   }
 
   private clearCanvas() {
@@ -288,6 +334,10 @@ export class DrawingCanvasController<
   }
 
   private onCanvasEvent(e: MouseEvent): void {
+    if (this.currentTool == null) {
+      throw new CurrentToolNotAssignedError();
+    }
+
     const callback = this.toolMouseEventCallbacks[this.currentTool];
     const currentToolConfig = this.toolConfig[this.currentTool];
 

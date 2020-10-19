@@ -1,4 +1,4 @@
-import { DrawingCanvasController, MouseEventToolCallback, MouseEventToolCallbackResult, ToolActionStepCallback, CanvasAction } from '.';
+import { DrawingCanvasController, MouseEventToolCallback, MouseEventToolCallbackResult, ToolActionStepCallback, CanvasAction, CurrentToolNotAssignedError, UnknownToolError } from '.';
 import { noConflict } from 'lodash';
 
 interface MockTool {
@@ -36,7 +36,7 @@ describe('canvas controller', () => {
       mockOpt: 0,
     }
 
-    controller = new DrawingCanvasController(canvas, 300, 300, 'mock', '#ffffff');
+    controller = new DrawingCanvasController(canvas, 300, 300, '#ffffff');
   });
 
   test('should configure the canvas properly', () => {
@@ -57,6 +57,36 @@ describe('canvas controller', () => {
     controller.addTool('mock', mockMouseCB, mockDrawCB, mockToolConfig);
 
     expect(controller['toolConfig'].mock).toBeDefined();
+  });
+  
+  describe('updating the selected tool', () => {
+    test('getting the current tool when it has not been set should throw', () => {
+      expect(() => {
+        controller.getCurrentTool();
+      }).toThrowError(CurrentToolNotAssignedError);
+    });
+
+    test('selecting a tool that has not been configured should throw', () => {
+      expect(() => {
+        controller.setCurrentTool('wrong' as any);
+      }).toThrowError(UnknownToolError);
+    });
+
+    test('selecting a tool that has been previously configured should be accepted', () => {
+      controller.addTool('mock', mockMouseCB, mockDrawCB, mockToolConfig);
+
+      controller.setCurrentTool('mock');
+
+      expect(controller['currentTool']).toEqual('mock');
+    });
+
+    test('getting the current tool when properly set should return it', () => {
+      controller.addTool('mock', mockMouseCB, mockDrawCB, mockToolConfig);
+
+      controller['currentTool'] = 'mock';
+
+      expect(controller.getCurrentTool()).toEqual('mock');
+    });
   });
 
   describe('obtaining data url for canvas', () => {
@@ -79,10 +109,9 @@ describe('canvas controller', () => {
     });
   });
 
-  describe('manipulting background', () => {
+  describe('manipulating background', () => {
     test('setting a color should fill the canvas with that color and redraw existing content on top', () => {
 
-      // const spied = jest.spyOn(controller as any, 'performAllCanvasActions').mockImplementation(() => { });
       let mockPerformAllCanvasActions = jest.fn<void, Parameters<typeof controller['performAllCanvasActions']>>();
 
       controller['performAllCanvasActions'] = mockPerformAllCanvasActions;

@@ -28,9 +28,11 @@ describe('tool & controller integration', () => {
       left: 50,
     } as DOMRect));
 
-    controller = new DrawingCanvasController(canvas, 300, 300, 'pen');
+    controller = new DrawingCanvasController(canvas, 300, 300);
 
     controller.addTool('pen', penMouseEventCallback, penDrawingCallback, penConfig);
+
+    controller.setCurrentTool('pen');
   });
 
   test('draw on canvas through mouse events', () => {

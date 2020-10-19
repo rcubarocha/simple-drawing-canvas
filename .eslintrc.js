@@ -18,6 +18,7 @@ module.exports = {
     '@typescript-eslint',
   ],
   rules: {
+    'max-classes-per-file': 'off',
     'max-len': ['error', { code: 125, ignoreTemplateLiterals: true }],
     // Augment airbnb rule to ignore required extension im imports for TS files
     'import/extensions': [
