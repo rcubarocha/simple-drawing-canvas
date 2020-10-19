@@ -41,8 +41,6 @@ describe('bucket mouse event callback', () => {
       playDrawing: () => {},
       getDataURL: (t, q) => '',
       setBackground: (s) => {},
-      setBackgroundColor: (s) => {},
-      setBackgroundFromElement: (i) => {},
       teardown: () => {},
     }
 
@@ -211,6 +209,7 @@ describe('bucket mouse event callback', () => {
 
 describe('bucket mouse action step callback', () => {
   let canvas: HTMLCanvasElement;
+  let canvasConfig: CanvasConfig;
   let ctx: CanvasRenderingContext2D;
   let toolConfig: BucketTool;
   let actionHistory: CanvasAction<'bucket', BucketTool>
@@ -233,6 +232,13 @@ describe('bucket mouse action step callback', () => {
 
     ctx = canvas.getContext('2d')!;
 
+    canvasConfig = {
+      scale: 3,
+      width: 300,
+      height: 300,
+      background: null
+    };
+
     toolConfig = {
       style: '#333333',
     };
@@ -254,7 +260,7 @@ describe('bucket mouse action step callback', () => {
       state: 'down',
     }
 
-    bucketDrawingCallback(canvas, downStep, actionHistory);
+    bucketDrawingCallback(downStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -285,7 +291,7 @@ describe('bucket mouse action step callback', () => {
 
     actionHistory.steps.push(downStep);
 
-    bucketDrawingCallback(canvas, upStep, actionHistory);
+    bucketDrawingCallback(upStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });

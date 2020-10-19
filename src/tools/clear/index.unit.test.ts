@@ -41,8 +41,6 @@ describe('clear mouse event callback', () => {
       playDrawing: () => {},
       getDataURL: (t, q) => '',
       setBackground: (s) => {},
-      setBackgroundColor: (s) => {},
-      setBackgroundFromElement: (i) => {},
       teardown: () => {},
     }
 
@@ -211,6 +209,7 @@ describe('clear mouse event callback', () => {
 
 describe('clear mouse action step callback', () => {
   let canvas: HTMLCanvasElement;
+  let canvasConfig: CanvasConfig;
   let ctx: CanvasRenderingContext2D;
   let toolConfig: ClearTool;
   let emptyToolConfig: ClearTool;
@@ -233,6 +232,13 @@ describe('clear mouse action step callback', () => {
     } as DOMRect));
 
     ctx = canvas.getContext('2d')!;
+
+    canvasConfig = {
+      scale: 3,
+      width: 300,
+      height: 300,
+      background: null
+    };
 
     toolConfig = {
       fill: '#333333',
@@ -258,7 +264,7 @@ describe('clear mouse action step callback', () => {
       state: 'down',
     }
 
-    clearDrawingCallback(canvas, downStep, actionHistory);
+    clearDrawingCallback(downStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -289,7 +295,7 @@ describe('clear mouse action step callback', () => {
 
     actionHistory.steps.push(downStep);
 
-    clearDrawingCallback(canvas, upStep, actionHistory);
+    clearDrawingCallback(upStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -320,7 +326,7 @@ describe('clear mouse action step callback', () => {
 
     actionHistory.steps.push(downStep);
 
-    clearDrawingCallback(canvas, upStep, actionHistory);
+    clearDrawingCallback(upStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });

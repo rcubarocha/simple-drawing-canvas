@@ -42,8 +42,6 @@ describe('line mouse event callback', () => {
       playDrawing: () => {},
       getDataURL: (t, q) => '',
       setBackground: (s) => {},
-      setBackgroundColor: (s) => {},
-      setBackgroundFromElement: (i) => {},
       teardown: () => {},
     }
 
@@ -267,6 +265,7 @@ describe('line mouse event callback', () => {
 
 describe('line mouse action step callback', () => {
   let canvas: HTMLCanvasElement;
+  let canvasConfig: CanvasConfig;
   let toolConfig: LineTool;
   let actionHistory: CanvasAction<'line', LineTool>
 
@@ -285,6 +284,13 @@ describe('line mouse action step callback', () => {
       bottom: 150,
       left: 50,
     } as DOMRect));
+
+    canvasConfig = {
+      scale: 3,
+      width: 300,
+      height: 300,
+      background: null
+    };
 
     toolConfig = {
       size: 10,
@@ -308,7 +314,7 @@ describe('line mouse action step callback', () => {
       state: 'down',
     }
 
-    lineDrawingCallback(canvas, downStep, actionHistory);
+    lineDrawingCallback(downStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -335,7 +341,7 @@ describe('line mouse action step callback', () => {
 
     actionHistory.steps.push(downStep);
 
-    lineDrawingCallback(canvas, moveStep, actionHistory);
+    lineDrawingCallback(moveStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -362,7 +368,7 @@ describe('line mouse action step callback', () => {
 
     actionHistory.steps.push(downStep);
 
-    lineDrawingCallback(canvas, upStep, actionHistory);
+    lineDrawingCallback(upStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });

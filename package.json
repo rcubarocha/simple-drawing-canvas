@@ -40,6 +40,7 @@
         "tsConfig": "tsconfig.test.json"
       }
     },
+    "testEnvironmentOptions": { "resources": "usable" },
     "transform": {
       "^.+\\.ts?$": "ts-jest"
     },

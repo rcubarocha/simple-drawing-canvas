@@ -36,7 +36,7 @@ describe('canvas controller', () => {
       mockOpt: 0,
     }
 
-    controller = new DrawingCanvasController(canvas, 300, 300, 'mock');
+    controller = new DrawingCanvasController(canvas, 300, 300, 'mock', '#ffffff');
   });
 
   test('should configure the canvas properly', () => {
@@ -46,7 +46,7 @@ describe('canvas controller', () => {
       width: 300,
       height: 300,
       scale: 3,
-      background: null,
+      background: '#ffffff',
     });
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -76,6 +76,22 @@ describe('canvas controller', () => {
 
     test('should return correct data url with custom settings', () => {
       expect(controller.getDataURL('image/jpeg', 0.5)).toEqual(canvas.toDataURL('image/jpeg', 0.5));
+    });
+  });
+
+  describe('manipulting background', () => {
+    test('setting a color should fill the canvas with that color and redraw existing content on top', () => {
+
+      // const spied = jest.spyOn(controller as any, 'performAllCanvasActions').mockImplementation(() => { });
+      let mockPerformAllCanvasActions = jest.fn<void, Parameters<typeof controller['performAllCanvasActions']>>();
+
+      controller['performAllCanvasActions'] = mockPerformAllCanvasActions;
+
+      controller.setBackground('#336699');
+
+      expect(controller['canvasConfig'].background).toEqual('#336699');
+      expect(mockPerformAllCanvasActions).toHaveBeenCalledTimes(1);
+      expect(canvas.toDataURL()).toMatchSnapshot();
     });
   });
 
@@ -205,8 +221,6 @@ describe('canvas controller', () => {
 
   describe('resetting the controller', () => {
     test('should clear history and the canvas', () => {
-      const freshCanvasDataUrl = canvas.toDataURL();
-
       let ctx = canvas.getContext('2d')!;
 
       // Make the canvas not empty
@@ -237,9 +251,9 @@ describe('canvas controller', () => {
       controller.reset();
 
       expect(controller['history'].actionsHistory.length).toBe(0);
-      // expect(controller['history'].undoHistory.length).toBe(0);
+      expect(controller['history'].undoHistory.length).toBe(0);
 
-      expect(canvas.toDataURL()).toEqual(freshCanvasDataUrl);
+      expect(canvas.toDataURL()).toMatchSnapshot();
     });
   })
 });

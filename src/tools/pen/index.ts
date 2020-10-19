@@ -82,21 +82,29 @@ export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function p
   throw Error('Inconsistent Pen Tool State');
 };
 
-export const penDrawingCallback: ToolActionStepCallback<PenTool> = function penDrawingCallback(c, a, h) {
+export const penDrawingCallback: ToolActionStepCallback<PenTool> = function penDrawingCallback(
+  actionStep, actionHistory, canvas,
+) {
   // If the action is from the mousedown event, do nothing.
-  if (a.state === 'down') {
+  if (actionStep.state === 'down') {
     return;
   }
 
-  if (a.state === 'move' || a.state === 'up') {
-    const ctx = c.getContext('2d')!;
+  if (actionStep.state === 'move' || actionStep.state === 'up') {
+    const ctx = canvas.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'source-over';
 
-    drawLine(ctx, h.steps[h.steps.length - 1].coords, a.coords, a.tool.size, a.tool.style);
+    drawLine(
+      ctx,
+      actionHistory.steps[actionHistory.steps.length - 1].coords,
+      actionStep.coords,
+      actionStep.tool.size,
+      actionStep.tool.style,
+    );
 
     return;
   }
 
-  throw Error(`Unrecognized Pen Tool State: ${a.state}`);
+  throw Error(`Unrecognized Pen Tool State: ${actionStep.state}`);
 };

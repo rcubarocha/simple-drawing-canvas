@@ -60,26 +60,35 @@ export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = functi
   return null;
 };
 
-export const clearDrawingCallback: ToolActionStepCallback<ClearTool> = function clearDrawingCallback(c, a) {
-  if (a.state === 'down') {
+export const clearDrawingCallback: ToolActionStepCallback<ClearTool> = function clearDrawingCallback(
+  actionStep, _, canvas, canvasConfig,
+) {
+  if (actionStep.state === 'down') {
     // If the action is from the mousedown event, do nothing.
     return;
   }
 
-  if (a.state === 'up') {
-    const ctx = c.getContext('2d')!;
+  if (actionStep.state === 'up') {
+    const ctx = canvas.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'source-over';
 
-    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (a.tool.fill) {
-      ctx.fillStyle = a.tool.fill;
-      ctx.fillRect(0, 0, c.width, c.height);
+    if (actionStep.tool.fill) {
+      ctx.fillStyle = actionStep.tool.fill;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (canvasConfig.background) {
+      if (canvasConfig.background instanceof Image) {
+        ctx.drawImage(canvasConfig.background, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = canvasConfig.background;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
 
     return;
   }
 
-  throw Error(`Unrecognized Clear Tool State: ${a.state}`);
+  throw Error(`Unrecognized Clear Tool State: ${actionStep.state}`);
 };

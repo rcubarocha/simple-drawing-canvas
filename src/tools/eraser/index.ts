@@ -81,21 +81,29 @@ export const eraserMouseEventCallback: MouseEventToolCallback<EraserTool> = func
   throw Error('Inconsistent Eraser Tool State');
 };
 
-export const eraserDrawingCallback: ToolActionStepCallback<EraserTool> = function eraserDrawingCallback(c, a, h) {
+export const eraserDrawingCallback: ToolActionStepCallback<EraserTool> = function eraserDrawingCallback(
+  actionStep, actionHistory, canvas,
+) {
   // If the action is from the mousedown event, do nothing.
-  if (a.state === 'down') {
+  if (actionStep.state === 'down') {
     return;
   }
 
-  if (a.state === 'move' || a.state === 'up') {
-    const ctx = c.getContext('2d')!;
+  if (actionStep.state === 'move' || actionStep.state === 'up') {
+    const ctx = canvas.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'destination-out';
 
-    drawLine(ctx, h.steps[h.steps.length - 1].coords, a.coords, a.tool.size, '#ffffff');
+    drawLine(
+      ctx,
+      actionHistory.steps[actionHistory.steps.length - 1].coords,
+      actionStep.coords,
+      actionStep.tool.size,
+      '#ffffff',
+    );
 
     return;
   }
 
-  throw Error(`Unrecognized Eraser Tool State: ${a.state}`);
+  throw Error(`Unrecognized Eraser Tool State: ${actionStep.state}`);
 };

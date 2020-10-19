@@ -19,7 +19,7 @@ export interface CanvasConfig {
   width: number,
   height: number,
   scale: number,
-  background: HTMLImageElement | null,
+  background: HTMLImageElement | StrokeFillStyle | null,
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,16 +50,15 @@ export interface BaseCanvasController {
   redo(redraw?: boolean): void;
   playDrawing(): void;
   getDataURL: HTMLCanvasElement['toDataURL']
-  setBackground(url: string): void;
-  setBackgroundFromElement(img: HTMLImageElement): void;
-  setBackgroundColor(color: string): void;
+  setBackground(bckg: CanvasConfig['background']): void;
   teardown(): void;
 }
 
 export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
-  canvas: HTMLCanvasElement,
   actionStep: CanvasActionStep<T>,
-  actionHistory: CanvasAction<N, T>
+  actionHistory: CanvasAction<N, T>,
+  canvas: HTMLCanvasElement,
+  canvasConfig: CanvasConfig,
 ) => void;
 
 export type MouseEventToolCallbackResult<T extends ToolConfig> = {
@@ -135,10 +134,12 @@ export class DrawingCanvasController<
     width: number,
     height: number,
     startTool: N,
+    background: CanvasConfig['background'] = null,
   ) {
     this.canvasElement = canvasElement;
     this.canvasConfig.width = width;
     this.canvasConfig.height = height;
+    this.canvasConfig.background = background;
     this.currentTool = startTool;
 
     this.onCanvasFocusBound = this.onCanvasFocus.bind(this);
@@ -167,8 +168,16 @@ export class DrawingCanvasController<
 
     ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+    const bckg = this.canvasConfig.background;
+
+    if (bckg) {
+      if (bckg instanceof Image) {
+        ctx.drawImage(bckg, 0, 0, this.canvasElement.width, this.canvasElement.height);
+      } else {
+        ctx.fillStyle = bckg;
+        ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+      }
+    }
   }
 
   private performCanvasAction(
@@ -176,9 +185,10 @@ export class DrawingCanvasController<
     actionHistory: CanvasAction<N, M[N]>,
   ): void {
     this.toolActionStepCallbacks[actionHistory.tool]?.(
-      this.canvasElement,
       actionStep,
       actionHistory,
+      this.canvasElement,
+      cloneDeep(this.canvasConfig),
     );
   }
 
@@ -190,6 +200,7 @@ export class DrawingCanvasController<
     }
 
     if (redraw) {
+      this.clearCanvas();
       this.performAllCanvasActions(this.history.actionsHistory);
     }
   }
@@ -202,17 +213,12 @@ export class DrawingCanvasController<
     }
 
     if (redraw) {
+      this.clearCanvas();
       this.performAllCanvasActions(this.history.actionsHistory);
     }
   }
 
   private performAllCanvasActions(actions: CanvasAction<N, M[N]>[], skipLastStep = false): void {
-    this.clearCanvas();
-
-    if (this.canvasConfig.background) {
-      this.setBackgroundFromElement(this.canvasConfig.background);
-    }
-
     actions.forEach((act, actIndex) => {
       act.steps.forEach((step, stepIndex) => {
         if (!skipLastStep || (actIndex !== actions.length - 1 || stepIndex !== act.steps.length - 1)) {
@@ -306,6 +312,7 @@ export class DrawingCanvasController<
         if (res) {
           if (res.actionStep) {
             if (res.replacePrevStep) {
+              this.clearCanvas();
               this.performAllCanvasActions(this.history.actionsHistory, true);
 
               const withoutPrevStep: CanvasAction<N, M[N]> = {
@@ -367,35 +374,28 @@ export class DrawingCanvasController<
     return this.canvasElement.toDataURL(type, quality);
   }
 
-  setBackground(url: string): void {
+  setBackground(bckg: CanvasConfig['background']): void {
+    this.canvasConfig.background = bckg;
+
+    this.clearCanvas();
+
+    // Clears canvas, sets the background, redraws history
+    this.performAllCanvasActions(this.history.actionsHistory);
+  }
+
+  setBackgroundFromURL(url: string): void {
     const temp = new Image();
     temp.crossOrigin = 'Anonymous';
     temp.onload = () => {
-      this.setBackgroundFromElement(temp);
+      this.setBackground(temp);
     };
 
     temp.src = url;
-
-    this.canvasConfig.background = temp;
-  }
-
-  setBackgroundFromElement(img: HTMLImageElement): void {
-    const ctx = this.canvasElement.getContext('2d')!;
-
-    ctx.drawImage(img, 0, 0, this.canvasElement.width, this.canvasElement.height);
-  }
-
-  setBackgroundColor(color: string): void {
-    const ctx = this.canvasElement.getContext('2d')!;
-
-    ctx.globalCompositeOperation = 'source-over';
-
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
   }
 
   reset(): void {
     this.history.actionsHistory = [];
+    this.history.undoHistory = [];
 
     this.clearCanvas();
   }
@@ -431,13 +431,13 @@ export class DrawingCanvasController<
 
     const w = this.canvasElement.ownerDocument.defaultView;
 
-    this.setBackgroundColor('#ffffff');
-
     if (w) {
       w.addEventListener('resize', this.onWindowResizeBound);
     }
 
     this.onWindowResize();
+
+    this.setBackground(this.canvasConfig.background);
 
     Object.keys(DrawingCanvasController.eventMap).forEach((key) => {
       const k = key as keyof TouchEventsMap;

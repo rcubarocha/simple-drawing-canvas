@@ -60,22 +60,24 @@ export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = func
   return null;
 };
 
-export const bucketDrawingCallback: ToolActionStepCallback<BucketTool> = function bucketDrawingCallback(c, a) {
-  if (a.state === 'down') {
+export const bucketDrawingCallback: ToolActionStepCallback<BucketTool> = function bucketDrawingCallback(
+  actionStep, _, canvas,
+) {
+  if (actionStep.state === 'down') {
     // If the action is from the mousedown event, do nothing.
     return;
   }
 
-  if (a.state === 'up') {
-    const ctx = c.getContext('2d')!;
+  if (actionStep.state === 'up') {
+    const ctx = canvas.getContext('2d')!;
 
     ctx.globalCompositeOperation = 'source-over';
 
-    ctx.fillStyle = a.tool.style;
-    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = actionStep.tool.style;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     return;
   }
 
-  throw Error(`Unrecognized Bucket Tool State: ${a.state}`);
+  throw Error(`Unrecognized Bucket Tool State: ${actionStep.state}`);
 };

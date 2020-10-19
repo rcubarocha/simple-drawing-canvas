@@ -42,8 +42,6 @@ describe('pen mouse event callback', () => {
       playDrawing: () => {},
       getDataURL: (t, q) => '',
       setBackground: (s) => {},
-      setBackgroundColor: (s) => {},
-      setBackgroundFromElement: (i) => {},
       teardown: () => {},
     }
 
@@ -254,6 +252,7 @@ describe('pen mouse event callback', () => {
 
 describe('pen mouse action step callback', () => {
   let canvas: HTMLCanvasElement;
+  let canvasConfig: CanvasConfig;
   let toolConfig: PenTool;
   let actionHistory: CanvasAction<'pen', PenTool>
 
@@ -272,6 +271,13 @@ describe('pen mouse action step callback', () => {
       bottom: 150,
       left: 50,
     } as DOMRect));
+
+    canvasConfig = {
+      scale: 3,
+      width: 300,
+      height: 300,
+      background: null
+    };
 
     toolConfig = {
       size: 10,
@@ -295,7 +301,7 @@ describe('pen mouse action step callback', () => {
       state: 'down',
     }
 
-    penDrawingCallback(canvas, downStep, actionHistory);
+    penDrawingCallback(downStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -322,7 +328,7 @@ describe('pen mouse action step callback', () => {
 
     actionHistory.steps.push(downStep);
 
-    penDrawingCallback(canvas, moveStep, actionHistory);
+    penDrawingCallback(moveStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
@@ -358,7 +364,7 @@ describe('pen mouse action step callback', () => {
 
     actionHistory.steps.push(downStep, moveStep);
 
-    penDrawingCallback(canvas, upStep, actionHistory);
+    penDrawingCallback(upStep, actionHistory, canvas, canvasConfig);
 
     expect(canvas.toDataURL()).toMatchSnapshot()
   });
