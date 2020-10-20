@@ -148,7 +148,7 @@ describe('canvas controller', () => {
   
     describe('manipulate action history', () => {
       let history: CanvasAction<MockToolName, MockTool>[];
-      let redrawMock: jest.SpyInstance<any, unknown[]> // typeof controller['performAllCanvasActions'] 
+      let redrawMock = jest.fn<void, Parameters<typeof controller['performAllCanvasActions']>>();
   
       beforeEach(() => {
         history = [
@@ -171,8 +171,9 @@ describe('canvas controller', () => {
           },
         ];
   
-        // any assertion used to access a private method for spying
-        redrawMock = jest.spyOn(controller as any, 'performAllCanvasActions').mockImplementation(() => {});
+        controller['performAllCanvasActions'] = redrawMock;
+        
+        redrawMock.mockReset();
       });
   
       test('undo should move latest history item to the front of undo list and redraw if required', () => {
@@ -267,6 +268,25 @@ describe('canvas controller', () => {
         expect(controller['history'].actionsHistory.length).toEqual(0);
         expect(controller['history'].undoHistory.length).toEqual(0);
         expect(redrawMock).toHaveBeenCalledTimes(1);
+      });
+
+      test('playing the history should perform as many actions as there are in history', (done) => {
+        controller['history'].actionsHistory = history;
+        
+        const spyPerformCanvasAction = jest.spyOn(controller as any, 'performCanvasAction');
+
+        controller.playDrawing(() => {
+          expect(spyPerformCanvasAction).toHaveBeenCalledTimes(history.length);
+          done();
+        });
+      });
+
+      test('playing the history when should not perform any actions', () => {
+        const spyPerformCanvasAction = jest.spyOn(controller as any, 'performCanvasAction');
+
+        controller.playDrawing();
+        
+        expect(spyPerformCanvasAction).toHaveBeenCalledTimes(0);
       });
     });
   

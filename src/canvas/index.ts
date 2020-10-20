@@ -67,7 +67,7 @@ export interface BaseCanvasController {
   getCanvas(): HTMLCanvasElement;
   undo(redraw?: boolean): void;
   redo(redraw?: boolean): void;
-  playDrawing(): void;
+  playDrawing(endCallback?: () => void): void;
   getDataURL: HTMLCanvasElement['toDataURL']
   setBackground(bckg: CanvasConfig['background']): void;
   teardown(): void;
@@ -283,8 +283,9 @@ export class DrawingCanvasController<
     });
   }
 
-  playDrawing(): void {
+  playDrawing(endCallback?: () => void): void {
     if (this.history.actionsHistory.length < 1) {
+      endCallback?.();
       return;
     }
 
@@ -311,6 +312,7 @@ export class DrawingCanvasController<
 
       if (actionIndex >= this.history.actionsHistory.length) {
         clearInterval(interval);
+        endCallback?.();
       }
     }, 5);
   }
