@@ -16,6 +16,7 @@ describe('tool & controller integration', () => {
 
     // jsdom does not implement layout-related properties
     jest.spyOn(canvas, 'offsetWidth', 'get').mockReturnValue(100);
+    jest.spyOn(canvas, 'offsetHeight', 'get').mockReturnValue(100);
     
     canvas.getBoundingClientRect = jest.fn(() => ({
       x: 50,

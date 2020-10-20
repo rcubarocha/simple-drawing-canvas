@@ -19,6 +19,11 @@ export interface ICoords {
   y: number,
 }
 
+interface ScaleInfo {
+  x: number,
+  y: number,
+}
+
 type StrokeStyle = CanvasRenderingContext2D['strokeStyle']
 
 type FillStyle = CanvasRenderingContext2D['fillStyle']
@@ -32,7 +37,7 @@ type MouseEventsMap = Pick<HTMLElementEventMap, 'mousedown' | 'mousemove' | 'mou
 export interface CanvasConfig {
   width: number,
   height: number,
-  scale: number,
+  scale: ScaleInfo,
   background: HTMLImageElement | StrokeFillStyle | null,
 }
 
@@ -111,7 +116,10 @@ export class DrawingCanvasController<
   private canvasConfig: CanvasConfig = {
     width: 0,
     height: 0,
-    scale: 1,
+    scale: {
+      x: 1,
+      y: 1,
+    },
     background: null,
   }
 
@@ -415,9 +423,8 @@ export class DrawingCanvasController<
   }
 
   private onWindowResize(): void {
-    this.canvasConfig.scale = this.canvasConfig.width / this.canvasElement.offsetWidth;
-
-    this.canvasElement.style.height = `${this.canvasConfig.height / this.canvasConfig.scale}px`;
+    this.canvasConfig.scale.x = this.canvasConfig.width / this.canvasElement.offsetWidth;
+    this.canvasConfig.scale.y = this.canvasConfig.height / this.canvasElement.offsetHeight;
   }
 
   getDataURL(type?: string | undefined, quality?: any): string {

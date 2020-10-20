@@ -26,7 +26,7 @@ export const getCanvasCoordsFromEvent = function getCanvasCoordsFromEvent(
   const { x, y } = canvas.getBoundingClientRect();
 
   return {
-    x: (event.clientX - x) * canvasConfig.scale,
-    y: (event.clientY - y) * canvasConfig.scale,
+    x: (event.clientX - x) * canvasConfig.scale.x,
+    y: (event.clientY - y) * canvasConfig.scale.y,
   };
 };

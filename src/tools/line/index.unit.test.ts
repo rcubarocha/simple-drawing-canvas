@@ -24,7 +24,7 @@ describe('line mouse event callback', () => {
     } as DOMRect));
 
     canvasConfig = {
-      scale: 3,
+      scale: { x: 3, y: 3 },
       width: 300,
       height: 300,
       background: null
@@ -286,7 +286,7 @@ describe('line mouse action step callback', () => {
     } as DOMRect));
 
     canvasConfig = {
-      scale: 3,
+      scale: { x: 3, y: 3 },
       width: 300,
       height: 300,
       background: null

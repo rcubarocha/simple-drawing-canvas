@@ -24,7 +24,7 @@ describe('get canvas-space coords from mouse event and controller config', () =>
     });
   
     const center = getCanvasCoordsFromEvent(me, c, {
-      scale: 3, width: 300, height: 300, background: null,
+      scale: { x: 3, y: 3 }, width: 300, height: 300, background: null,
     });
   
     expect(center).toEqual({ x: 150, y: 150 });
@@ -35,7 +35,7 @@ describe('get canvas-space coords from mouse event and controller config', () =>
     });
   
     const topLeft = getCanvasCoordsFromEvent(me, c, {
-      scale: 3, width: 300, height: 300, background: null,
+      scale:  { x: 3, y: 3 }, width: 300, height: 300, background: null,
     });
   
     expect(topLeft).toEqual({ x: 0, y: 0 });
@@ -46,7 +46,7 @@ describe('get canvas-space coords from mouse event and controller config', () =>
     });
   
     const topRight = getCanvasCoordsFromEvent(me, c, {
-      scale: 3, width: 300, height: 300, background: null,
+      scale:  { x: 3, y: 3 }, width: 300, height: 300, background: null,
     });
   
     expect(topRight).toEqual({ x: 300, y: 0 });
@@ -57,7 +57,7 @@ describe('get canvas-space coords from mouse event and controller config', () =>
     });
   
     const bottomLeft = getCanvasCoordsFromEvent(me, c, {
-      scale: 3, width: 300, height: 300, background: null,
+      scale:  { x: 3, y: 3 }, width: 300, height: 300, background: null,
     });
   
     expect(bottomLeft).toEqual({ x: 0, y: 300 });
@@ -68,7 +68,7 @@ describe('get canvas-space coords from mouse event and controller config', () =>
     });
   
     const bottomRight = getCanvasCoordsFromEvent(me, c, {
-      scale: 3, width: 300, height: 300, background: null,
+      scale:  { x: 3, y: 3 }, width: 300, height: 300, background: null,
     });
   
     expect(bottomRight).toEqual({ x: 300, y: 300 });
@@ -82,7 +82,7 @@ describe('get canvas-space coords from mouse event and controller config', () =>
     });
   
     const outOfBounds = getCanvasCoordsFromEvent(me, c, {
-      scale: 3, width: 300, height: 300, background: null,
+      scale:  { x: 3, y: 3 }, width: 300, height: 300, background: null,
     });
   
     expect(outOfBounds).toEqual({ x: -90, y: 585 });
