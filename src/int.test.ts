@@ -39,22 +39,27 @@ describe('tool & controller integration', () => {
   test('draw on canvas through mouse events', () => {
     const mouseEvents: MouseEvent[] = [
       new MouseEvent('mousedown', {
+        buttons: 1,
         clientX: 70,
         clientY: 130,
       }),
       new MouseEvent('mousemove', {
+        buttons: 1,
         clientX: 100,
         clientY: 70,
       }),
       new MouseEvent('mousemove', {
+        buttons: 1,
         clientX: 130,
         clientY: 130,
       }),
       new MouseEvent('mousemove', {
+        buttons: 1,
         clientX: 70,
         clientY: 130,
       }),
       new MouseEvent('mouseup', {
+        buttons: 1,
         clientX: 70,
         clientY: 130,
       }),

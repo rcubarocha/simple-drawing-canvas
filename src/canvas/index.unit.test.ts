@@ -7,8 +7,8 @@ interface MockTool {
 
 type MockToolName = 'mock';
 
-const mockMouseCB = jest.fn<MouseEventToolCallbackResult<MockTool>, Parameters<MouseEventToolCallback<MockTool>>>()
-const mockDrawCB = jest.fn<void, Parameters<ToolActionStepCallback<MockTool>>>()
+const mockMouseCB = jest.fn<ReturnType<MouseEventToolCallback<MockTool>>, Parameters<MouseEventToolCallback<MockTool>>>()
+const mockDrawCB = jest.fn<ReturnType<ToolActionStepCallback<MockTool>>, Parameters<ToolActionStepCallback<MockTool>>>()
 
 describe('canvas controller', () => {
   let canvas: HTMLCanvasElement;
@@ -287,6 +287,165 @@ describe('canvas controller', () => {
         controller.playDrawing();
         
         expect(spyPerformCanvasAction).toHaveBeenCalledTimes(0);
+      });
+    });
+
+    describe('mouse event handler', () => {
+      beforeEach(() => {
+        controller.addTool('mock', mockMouseCB, mockDrawCB, mockToolConfig);
+        mockMouseCB.mockReset();
+      });
+
+      test('should throw when no Current Tool has been set', () => {
+        const mouseEvent = new MouseEvent('mousedown', {
+          buttons: 1,
+          clientX: 70,
+          clientY: 130,
+        });
+        expect(() => { controller['onCanvasEvent'](mouseEvent) }).toThrowError(CurrentToolNotAssignedError);
+      });
+
+      test('should return without calling the tool callback when event is down/move without primary button down', () => {
+        controller.setCurrentTool('mock');
+
+        const downEvent = new MouseEvent('mousedown', {
+          buttons: 2,
+          clientX: 70,
+          clientY: 130,
+        });
+
+        controller['onCanvasEvent'](downEvent);
+
+        expect(mockMouseCB).toHaveBeenCalledTimes(0);
+
+        const moveEvent = new MouseEvent('mousemove', {
+          buttons: 2,
+          clientX: 70,
+          clientY: 130,
+        });
+  
+        controller['onCanvasEvent'](moveEvent);
+
+        expect(mockMouseCB).toHaveBeenCalledTimes(0);
+      });
+
+      describe('when event is forwarded to tool callback', () => {
+        beforeEach(() => {
+          controller.setCurrentTool('mock');
+          mockDrawCB.mockReset();
+        });
+
+        test('if tool callback ignores event, no action should be performed', () => {
+
+          mockMouseCB.mockImplementation(() => null);
+  
+          const downEvent = new MouseEvent('mousedown', {
+            buttons: 1,
+            clientX: 70,
+            clientY: 130,
+          });
+  
+          controller['onCanvasEvent'](downEvent);
+  
+          expect(mockMouseCB).toHaveBeenCalledTimes(1);
+          expect(mockDrawCB).toHaveBeenCalledTimes(0);
+  
+          const moveEvent = new MouseEvent('mousemove', {
+            buttons: 1,
+            clientX: 70,
+            clientY: 130,
+          });
+  
+          controller['onCanvasEvent'](moveEvent);
+  
+          expect(mockMouseCB).toHaveBeenCalledTimes(2);
+          expect(mockDrawCB).toHaveBeenCalledTimes(0);
+  
+          const upEvent = new MouseEvent('mouseup', {
+            buttons: 0,
+            clientX: 70,
+            clientY: 130,
+          });
+  
+          controller['onCanvasEvent'](upEvent);
+  
+          expect(mockMouseCB).toHaveBeenCalledTimes(3);
+          expect(mockDrawCB).toHaveBeenCalledTimes(0);
+        });
+
+        test('if tool callback returns a response it should perform the action accordingly', () => {
+
+          mockMouseCB.mockImplementationOnce(() => ({
+            endCurrentAction: false,
+            replacePrevStep: false,
+            actionStep: {
+              tool: mockToolConfig,
+              coords: {
+                x: 60,
+                y: 240,
+              },
+              state: 'down',
+            }
+          })).mockImplementationOnce(() => ({
+            endCurrentAction: false,
+            replacePrevStep: false,
+            actionStep: {
+              tool: mockToolConfig,
+              coords: {
+                x: 60,
+                y: 240,
+              },
+              state: 'move',
+            }
+          })).mockImplementationOnce(() => ({
+            endCurrentAction: true,
+            replacePrevStep: true,
+            actionStep: {
+              tool: mockToolConfig,
+              coords: {
+                x: 60,
+                y: 240,
+              },
+              state: 'up',
+            }
+          }));
+  
+          const downEvent = new MouseEvent('mousedown', {
+            buttons: 1,
+            clientX: 70,
+            clientY: 130,
+          });
+  
+          controller['onCanvasEvent'](downEvent);
+  
+          expect(mockMouseCB).toHaveBeenCalledTimes(1);
+          expect(mockDrawCB).toHaveBeenCalledTimes(1);
+  
+          const moveEvent = new MouseEvent('mousemove', {
+            buttons: 1,
+            clientX: 70,
+            clientY: 130,
+          });
+  
+          controller['onCanvasEvent'](moveEvent);
+  
+          expect(mockMouseCB).toHaveBeenCalledTimes(2);
+          expect(mockDrawCB).toHaveBeenCalledTimes(2);
+  
+          const upEvent = new MouseEvent('mouseup', {
+            buttons: 0,
+            clientX: 70,
+            clientY: 130,
+          });
+  
+          controller['onCanvasEvent'](upEvent);
+  
+          expect(mockMouseCB).toHaveBeenCalledTimes(3);
+          // Per the Mouse Callback return value, the mouse up event will replace the mouse move event
+          // This results in an extra call to the Mock Tool Draw Callback when redrawing everything
+          // up to (but not including) this step will replace
+          expect(mockDrawCB).toHaveBeenCalledTimes(4);
+        });
       });
     });
   

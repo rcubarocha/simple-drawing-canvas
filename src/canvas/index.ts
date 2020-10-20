@@ -83,7 +83,7 @@ export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
 export type MouseEventToolCallbackResult<T extends ToolConfig> = {
   endCurrentAction: boolean,
   replacePrevStep: boolean,
-  actionStep?: CanvasActionStep<T>,
+  actionStep: CanvasActionStep<T>,
 };
 
 export type MouseEventToolCallback<T extends ToolConfig> = <N extends string>(
@@ -348,6 +348,11 @@ export class DrawingCanvasController<
       throw new CurrentToolNotAssignedError();
     }
 
+    // Ignore any down or move events without primary button being down
+    if ((e.type === 'mousedown' || e.type === 'mousemove') && e.buttons !== 1) {
+      return;
+    }
+
     const callback = this.toolMouseEventCallbacks[this.currentTool];
     const currentToolConfig = this.toolConfig[this.currentTool];
 
@@ -370,25 +375,23 @@ export class DrawingCanvasController<
         );
 
         if (res) {
-          if (res.actionStep) {
-            if (res.replacePrevStep) {
-              this.clearCanvas();
-              this.performAllCanvasActions(this.history.actionsHistory, true);
+          if (res.replacePrevStep) {
+            this.clearCanvas();
+            this.performAllCanvasActions(this.history.actionsHistory, true);
 
-              const withoutPrevStep: CanvasAction<N, M[N]> = {
-                tool: currentActionHistory.tool,
-                steps: [...currentActionHistory.steps.slice(0, currentActionHistory.steps.length - 1)],
-              };
+            const withoutPrevStep: CanvasAction<N, M[N]> = {
+              tool: currentActionHistory.tool,
+              steps: [...currentActionHistory.steps.slice(0, currentActionHistory.steps.length - 1)],
+            };
 
-              this.performCanvasAction(res.actionStep, withoutPrevStep);
+            this.performCanvasAction(res.actionStep, withoutPrevStep);
 
-              this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, true);
-            } else {
-              this.performCanvasAction(res.actionStep, currentActionHistory);
+            this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, true);
+          } else {
+            this.performCanvasAction(res.actionStep, currentActionHistory);
 
-              // If the action was performed without throwing an error, commit the action to the history
-              this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, false);
-            }
+            // If the action was performed without throwing an error, commit the action to the history
+            this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, false);
           }
 
           this.newActionNextEvent = res.endCurrentAction;
@@ -405,6 +408,7 @@ export class DrawingCanvasController<
 
   private onTouchEvent(e: TouchEvent): void {
     const me = new MouseEvent(DrawingCanvasController.eventMap[e.type as keyof TouchEventsMap], {
+      buttons: 1,
       clientX: e.changedTouches[0].clientX,
       clientY: e.changedTouches[0].clientY,
       bubbles: true,
