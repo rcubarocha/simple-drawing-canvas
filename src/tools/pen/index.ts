@@ -35,7 +35,7 @@ export const penMouseEventCallback: ToolMouseEventCallback<PenTool> = function p
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
-      throw Error('Inconsistent State');
+      throw Error('Pen: Inconsistent Action State - Move Event without previous Down or Move event');
     }
 
     const state = 'move';
@@ -61,7 +61,7 @@ export const penMouseEventCallback: ToolMouseEventCallback<PenTool> = function p
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
-      throw Error('Inconsistent State');
+      throw Error('Pen: Inconsistent Action State - Up Event without previous Down or Move event');
     }
 
     const state = 'up';
@@ -79,7 +79,7 @@ export const penMouseEventCallback: ToolMouseEventCallback<PenTool> = function p
     };
   }
 
-  throw Error('Inconsistent Pen Tool State');
+  throw Error(`Pen: Unhandled Event Type: ${event.type}`);
 };
 
 export const penDrawingCallback: ToolActionStepCallback<PenTool> = function penDrawingCallback(
@@ -106,5 +106,5 @@ export const penDrawingCallback: ToolActionStepCallback<PenTool> = function penD
     return;
   }
 
-  throw Error(`Unrecognized Pen Tool State: ${actionStep.state}`);
+  throw Error(`Pen: Unrecognized Action Step State: ${actionStep.state}`);
 };

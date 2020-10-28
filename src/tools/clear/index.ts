@@ -26,6 +26,11 @@ export const clearMouseEventCallback: ToolMouseEventCallback<ClearTool> = functi
     };
   }
 
+  // Ignore Move events
+  if (event.type === 'mousemove') {
+    return null;
+  }
+
   if (event.type === 'mouseup') {
     if (actionHistory.steps.length < 1) {
       return null;
@@ -34,7 +39,7 @@ export const clearMouseEventCallback: ToolMouseEventCallback<ClearTool> = functi
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down') {
-      throw Error('Inconsistent Clear Tool State');
+      throw Error('Clear: Inconsistent Action State - Up Event without previous Down event');
     }
 
     // If the mouse up event happens outside the canvas, invalidate the whole action
@@ -57,7 +62,7 @@ export const clearMouseEventCallback: ToolMouseEventCallback<ClearTool> = functi
     }
   }
 
-  return null;
+  throw Error(`Clear: Unhandled Event Type: ${event.type}`);
 };
 
 export const clearDrawingCallback: ToolActionStepCallback<ClearTool> = function clearDrawingCallback(
@@ -90,5 +95,5 @@ export const clearDrawingCallback: ToolActionStepCallback<ClearTool> = function 
     return;
   }
 
-  throw Error(`Unrecognized Clear Tool State: ${actionStep.state}`);
+  throw Error(`Clear: Unrecognized Action Step State: ${actionStep.state}`);
 };

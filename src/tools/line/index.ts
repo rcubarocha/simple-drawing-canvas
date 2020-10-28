@@ -35,7 +35,7 @@ export const lineMouseEventCallback: ToolMouseEventCallback<LineTool> = function
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
-      throw Error('Inconsistent State');
+      throw Error('Line: Inconsistent Action State - Move Event without previous Down or Move event');
     }
 
     const state = 'move';
@@ -61,7 +61,7 @@ export const lineMouseEventCallback: ToolMouseEventCallback<LineTool> = function
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
-      throw Error('Inconsistent State');
+      throw Error('Line: Inconsistent Action State - Up Event without previous Down or Move event');
     }
 
     const state = 'up';
@@ -79,7 +79,7 @@ export const lineMouseEventCallback: ToolMouseEventCallback<LineTool> = function
     };
   }
 
-  throw Error('Inconsistent Line Tool State');
+  throw Error(`Line: Unhandled Event Type: ${event.type}`);
 };
 
 export const lineDrawingCallback: ToolActionStepCallback<LineTool> = function lineDrawingCallback(
@@ -106,5 +106,5 @@ export const lineDrawingCallback: ToolActionStepCallback<LineTool> = function li
     return;
   }
 
-  throw Error(`Unrecognized Line Tool State: ${actionStep.state}`);
+  throw Error(`Line: Unrecognized Action Step State: ${actionStep.state}`);
 };

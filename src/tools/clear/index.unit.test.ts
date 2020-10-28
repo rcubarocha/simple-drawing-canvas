@@ -193,14 +193,16 @@ describe('clear mouse event callback', () => {
 
   // Other
 
-  test('any other event should return null', () => {
+  test('any other event should throw', () => {
   
     const me = new window.MouseEvent('mousewheel', {
       clientX: 150,
       clientY: 150,
     });
     
-    expect(clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [ ] })).toBeNull();
+    expect(() => {
+      clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [ ] });
+    }).toThrow();
   });
 
 });

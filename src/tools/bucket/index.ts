@@ -26,6 +26,11 @@ export const bucketMouseEventCallback: ToolMouseEventCallback<BucketTool> = func
     };
   }
 
+  // Ignore Move events
+  if (event.type === 'mousemove') {
+    return null;
+  }
+
   if (event.type === 'mouseup') {
     if (actionHistory.steps.length < 1) {
       return null;
@@ -34,7 +39,7 @@ export const bucketMouseEventCallback: ToolMouseEventCallback<BucketTool> = func
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down') {
-      throw Error('Inconsistent State');
+      throw Error('Bucket: Inconsistent Action State - Up Event without previous Down event');
     }
 
     // If the mouse up event happens outside the canvas, invalidate the whole action
@@ -57,7 +62,7 @@ export const bucketMouseEventCallback: ToolMouseEventCallback<BucketTool> = func
     }
   }
 
-  return null;
+  throw Error(`Bucket: Unhandled Event Type: ${event.type}`);
 };
 
 export const bucketDrawingCallback: ToolActionStepCallback<BucketTool> = function bucketDrawingCallback(
@@ -79,5 +84,5 @@ export const bucketDrawingCallback: ToolActionStepCallback<BucketTool> = functio
     return;
   }
 
-  throw Error(`Unrecognized Bucket Tool State: ${actionStep.state}`);
+  throw Error(`Bucket: Unrecognized Action Step State: ${actionStep.state}`);
 };

@@ -193,14 +193,16 @@ describe('bucket mouse event callback', () => {
 
   // Other
 
-  test('any other event should return null', () => {
+  test('any other event should throw', () => {
   
     const me = new window.MouseEvent('mousewheel', {
       clientX: 150,
       clientY: 150,
     });
     
-    expect(bucketMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'bucket', steps: [ ] })).toBeNull();
+    expect(() => {
+      bucketMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'bucket', steps: [ ] });
+    }).toThrow();
   });
 
 });

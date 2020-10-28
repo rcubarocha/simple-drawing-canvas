@@ -34,7 +34,7 @@ export const eraserMouseEventCallback: ToolMouseEventCallback<EraserTool> = func
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
-      throw Error('Inconsistent Eraser Tool State');
+      throw Error('Eraser: Inconsistent Action State - Move Event without previous Down or Move event');
     }
 
     const state = 'move';
@@ -60,7 +60,7 @@ export const eraserMouseEventCallback: ToolMouseEventCallback<EraserTool> = func
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
-      throw Error('Inconsistent Eraser Tool State');
+      throw Error('Eraser: Inconsistent Action State - Up Event without previous Down or Move event');
     }
 
     const state = 'up';
@@ -78,7 +78,7 @@ export const eraserMouseEventCallback: ToolMouseEventCallback<EraserTool> = func
     };
   }
 
-  throw Error('Inconsistent Eraser Tool State');
+  throw Error(`Eraser: Unhandled Event Type: ${event.type}`);
 };
 
 export const eraserDrawingCallback: ToolActionStepCallback<EraserTool> = function eraserDrawingCallback(
@@ -105,5 +105,5 @@ export const eraserDrawingCallback: ToolActionStepCallback<EraserTool> = functio
     return;
   }
 
-  throw Error(`Unrecognized Eraser Tool State: ${actionStep.state}`);
+  throw Error(`Eraser: Unrecognized Action Step State: ${actionStep.state}`);
 };
