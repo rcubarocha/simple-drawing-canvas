@@ -1,13 +1,13 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
+  ToolMouseEventCallback, ToolActionStepCallback, StrokeFillStyle,
 } from '../../canvas';
 import { getCanvasCoordsFromEvent } from '../../utils';
 
 export interface ClearTool {
-  fill?: StrokeFillStyle
+  style?: StrokeFillStyle
 }
 
-export const clearMouseEventCallback: MouseEventToolCallback<ClearTool> = function clearMouseEventCallback(
+export const clearMouseEventCallback: ToolMouseEventCallback<ClearTool> = function clearMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
   if (event.type === 'mousedown') {
@@ -75,8 +75,8 @@ export const clearDrawingCallback: ToolActionStepCallback<ClearTool> = function 
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (actionStep.tool.fill) {
-      ctx.fillStyle = actionStep.tool.fill;
+    if (actionStep.tool.style) {
+      ctx.fillStyle = actionStep.tool.style;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else if (canvasConfig.background) {
       if (canvasConfig.background instanceof Image) {

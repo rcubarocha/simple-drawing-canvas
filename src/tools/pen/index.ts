@@ -1,5 +1,5 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
+  ToolMouseEventCallback, ToolActionStepCallback, StrokeFillStyle,
 } from '../../canvas';
 import { drawLine, getCanvasCoordsFromEvent } from '../../utils';
 
@@ -8,7 +8,7 @@ export interface PenTool {
   style: StrokeFillStyle
 }
 
-export const penMouseEventCallback: MouseEventToolCallback<PenTool> = function penMouseEventCallback(
+export const penMouseEventCallback: ToolMouseEventCallback<PenTool> = function penMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
   if (event.type === 'mousedown') {

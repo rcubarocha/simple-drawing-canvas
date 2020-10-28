@@ -1,5 +1,5 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
+  ToolMouseEventCallback, ToolActionStepCallback, StrokeFillStyle,
 } from '../../canvas';
 import { drawLine, getCanvasCoordsFromEvent } from '../../utils';
 
@@ -8,7 +8,7 @@ export interface LineTool {
   style: StrokeFillStyle
 }
 
-export const lineMouseEventCallback: MouseEventToolCallback<LineTool> = function lineMouseEventCallback(
+export const lineMouseEventCallback: ToolMouseEventCallback<LineTool> = function lineMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
   if (event.type === 'mousedown') {

@@ -1,5 +1,5 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback, StrokeFillStyle,
+  ToolMouseEventCallback, ToolActionStepCallback, StrokeFillStyle,
 } from '../../canvas';
 import { getCanvasCoordsFromEvent } from '../../utils';
 
@@ -7,7 +7,7 @@ export interface BucketTool {
   style: StrokeFillStyle
 }
 
-export const bucketMouseEventCallback: MouseEventToolCallback<BucketTool> = function bucketMouseEventCallback(
+export const bucketMouseEventCallback: ToolMouseEventCallback<BucketTool> = function bucketMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
   if (event.type === 'mousedown') {

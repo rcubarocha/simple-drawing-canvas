@@ -31,7 +31,7 @@ describe('clear mouse event callback', () => {
     };
 
     toolConfig = {
-      fill: "#333333"
+      style: "#333333"
     };
 
     mockController = {
@@ -241,7 +241,7 @@ describe('clear mouse action step callback', () => {
     };
 
     toolConfig = {
-      fill: '#333333',
+      style: '#333333',
     };
 
     emptyToolConfig = {

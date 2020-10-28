@@ -80,20 +80,20 @@ export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
   canvasConfig: CanvasConfig,
 ) => void;
 
-export type MouseEventToolCallbackResult<T extends ToolConfig> = {
+export type ToolMouseEventCallbackResult<T extends ToolConfig> = {
   endCurrentAction: boolean,
   replacePrevStep: boolean,
   actionStep: CanvasActionStep<T>,
 };
 
-export type MouseEventToolCallback<T extends ToolConfig> = <N extends string>(
+export type ToolMouseEventCallback<T extends ToolConfig> = <N extends string>(
   this: BaseCanvasController,
   event: MouseEvent,
   canvas: HTMLCanvasElement,
   canvasConfig: CanvasConfig,
   toolConfig: T,
   actionHistory: CanvasAction<N, T>,
-) => MouseEventToolCallbackResult<T> | null;
+) => ToolMouseEventCallbackResult<T> | null;
 
 export class DrawingCanvasController<
   N extends string,
@@ -141,7 +141,7 @@ export class DrawingCanvasController<
     touchcancel: 'mouseup',
   }
 
-  private toolMouseEventCallbacks: { [K in N]?: MouseEventToolCallback<M[K]> } = { }
+  private toolMouseEventCallbacks: { [K in N]?: ToolMouseEventCallback<M[K]> } = { }
 
   private toolActionStepCallbacks: { [K in N]?: ToolActionStepCallback<M[K]> } = { }
 
@@ -187,14 +187,14 @@ export class DrawingCanvasController<
   }
 
   addTool<K extends N>(
-    toolType: K,
-    eventCB: MouseEventToolCallback<M[K]>,
+    toolName: K,
+    eventCB: ToolMouseEventCallback<M[K]>,
     actionCB: ToolActionStepCallback<M[K]>,
     initialConfig: M[K],
   ): void {
-    this.toolMouseEventCallbacks[toolType] = eventCB;
-    this.toolActionStepCallbacks[toolType] = actionCB;
-    this.toolConfig[toolType] = initialConfig;
+    this.toolMouseEventCallbacks[toolName] = eventCB;
+    this.toolActionStepCallbacks[toolName] = actionCB;
+    this.toolConfig[toolName] = initialConfig;
   }
 
   setToolConfig<K extends N>(tool: K, config: M[K]): void {

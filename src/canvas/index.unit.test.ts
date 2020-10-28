@@ -1,4 +1,4 @@
-import { DrawingCanvasController, MouseEventToolCallback, MouseEventToolCallbackResult, ToolActionStepCallback, CanvasAction, CurrentToolNotAssignedError, UnknownToolError } from '.';
+import { DrawingCanvasController, ToolMouseEventCallback, ToolMouseEventCallbackResult, ToolActionStepCallback, CanvasAction, CurrentToolNotAssignedError, UnknownToolError } from '.';
 import { noConflict } from 'lodash';
 
 interface MockTool {
@@ -7,7 +7,7 @@ interface MockTool {
 
 type MockToolName = 'mock';
 
-const mockMouseCB = jest.fn<ReturnType<MouseEventToolCallback<MockTool>>, Parameters<MouseEventToolCallback<MockTool>>>()
+const mockMouseCB = jest.fn<ReturnType<ToolMouseEventCallback<MockTool>>, Parameters<ToolMouseEventCallback<MockTool>>>()
 const mockDrawCB = jest.fn<ReturnType<ToolActionStepCallback<MockTool>>, Parameters<ToolActionStepCallback<MockTool>>>()
 
 describe('canvas controller', () => {

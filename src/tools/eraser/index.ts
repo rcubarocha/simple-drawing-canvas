@@ -1,5 +1,5 @@
 import type {
-  MouseEventToolCallback, ToolActionStepCallback,
+  ToolMouseEventCallback, ToolActionStepCallback,
 } from '../../canvas';
 import { drawLine, getCanvasCoordsFromEvent } from '../../utils';
 
@@ -7,7 +7,7 @@ export interface EraserTool {
   size: number,
 }
 
-export const eraserMouseEventCallback: MouseEventToolCallback<EraserTool> = function eraserMouseEventCallback(
+export const eraserMouseEventCallback: ToolMouseEventCallback<EraserTool> = function eraserMouseEventCallback(
   event, canvas, canvasConfig, toolConfig, actionHistory,
 ) {
   if (event.type === 'mousedown') {
