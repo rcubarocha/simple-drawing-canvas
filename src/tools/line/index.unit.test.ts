@@ -59,16 +59,18 @@ describe('line mouse event callback', () => {
     const res = lineMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'line', steps: [] });
 
     const expected = {
-      endCurrentAction: false,
-      actionStep: {
-        tool: toolConfig,
-        coords: {
-          x: 150,
-          y: 150,
+      actionStatus: 'continue',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: {
+            x: 150,
+            y: 150,
+          },
+          state: 'down',
         },
-        state: 'down',
-      },
-      replacePrevStep: false,
+        replacePrevStep: false,
+      }
     };
 
     expect(res).toEqual(expected);
@@ -76,14 +78,18 @@ describe('line mouse event callback', () => {
 
   // Mouse Move
 
-  test('mouse move event should return null if no action history exists', () => {
+  test('mouse move event should return result to ignore event if no action history exists', () => {
   
     const me = new window.MouseEvent('mousemove', {
       clientX: 150,
       clientY: 150,
     });
+
+    const expected = {
+      actionStatus: "continue",
+    };
     
-    expect (lineMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'line', steps: [] })).toBeNull();
+    expect (lineMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'line', steps: [] })).toEqual(expected);
   });
 
   test('mouse move event should throw if action history is in inconsistent state', () => {
@@ -137,29 +143,33 @@ describe('line mouse event callback', () => {
     const resPrevMove = lineMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'line', steps: [ prevDown, prevMove ] });
 
     const prevDownExpected = {
-      endCurrentAction: false,
-      actionStep: {
-        tool: toolConfig,
-        coords: {
-          x: 300,
-          y: 300,
+      actionStatus: 'continue',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: {
+            x: 300,
+            y: 300,
+          },
+          state: 'move',
         },
-        state: 'move',
+        replacePrevStep: false,
       },
-      replacePrevStep: false,
     };
 
     const prevMoveExected = {
-      endCurrentAction: false,
-      actionStep: {
-        tool: toolConfig,
-        coords: {
-          x: 300,
-          y: 300,
+      actionStatus: 'continue',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: {
+            x: 300,
+            y: 300,
+          },
+          state: 'move',
         },
-        state: 'move',
+        replacePrevStep: true,
       },
-      replacePrevStep: true,
     };
 
     expect(resPrevDown).toEqual(prevDownExpected);
@@ -168,14 +178,18 @@ describe('line mouse event callback', () => {
 
   // Mouse Up
 
-  test('mouse up event should return null if no action history exists', () => {
+  test('mouse up event should cancel action if no action history exists', () => {
   
     const me = new window.MouseEvent('mouseup', {
       clientX: 150,
       clientY: 150,
     });
+
+    const expected = {
+      actionStatus: "cancel",
+    };
     
-    expect (lineMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'line', steps: [] })).toBeNull();
+    expect (lineMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'line', steps: [] })).toEqual(expected);
   });
 
   test('mouse up event should throw if action history is in inconsistent state', () => {
@@ -229,16 +243,18 @@ describe('line mouse event callback', () => {
     const resPrevMove = lineMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'line', steps: [ prevDown, prevMove ] });
 
     const expected = {
-      endCurrentAction: true,
-      actionStep: {
-        tool: toolConfig,
-        coords: {
-          x: 300,
-          y: 300,
+      actionStatus: 'end',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: {
+            x: 300,
+            y: 300,
+          },
+          state: 'up',
         },
-        state: 'up',
+        replacePrevStep: true,
       },
-      replacePrevStep: true,
     };
 
     expect(resPrevDown).toEqual(expected);

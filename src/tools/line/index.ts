@@ -17,19 +17,23 @@ export const lineMouseEventCallback: ToolMouseEventCallback<LineTool> = function
     const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
-      endCurrentAction: false,
-      actionStep: {
-        tool: toolConfig,
-        coords: eCoords,
-        state,
+      actionStatus: 'continue',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: eCoords,
+          state,
+        },
+        replacePrevStep: false,
       },
-      replacePrevStep: false,
     };
   }
 
   if (event.type === 'mousemove') {
     if (actionHistory.steps.length < 1) {
-      return null;
+      return {
+        actionStatus: 'continue',
+      };
     }
 
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
@@ -43,19 +47,23 @@ export const lineMouseEventCallback: ToolMouseEventCallback<LineTool> = function
     const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
-      endCurrentAction: false,
-      actionStep: {
-        tool: toolConfig,
-        coords: eCoords,
-        state,
+      actionStatus: 'continue',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: eCoords,
+          state,
+        },
+        replacePrevStep: prevToolState === 'move',
       },
-      replacePrevStep: prevToolState === 'move',
     };
   }
 
   if (event.type === 'mouseup') {
     if (actionHistory.steps.length < 1) {
-      return null;
+      return {
+        actionStatus: 'cancel',
+      };
     }
 
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
@@ -69,13 +77,15 @@ export const lineMouseEventCallback: ToolMouseEventCallback<LineTool> = function
     const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
-      endCurrentAction: true,
-      actionStep: {
-        tool: toolConfig,
-        coords: eCoords,
-        state,
+      actionStatus: 'end',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: eCoords,
+          state,
+        },
+        replacePrevStep: true,
       },
-      replacePrevStep: true,
     };
   }
 

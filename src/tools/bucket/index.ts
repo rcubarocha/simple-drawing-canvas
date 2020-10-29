@@ -16,24 +16,30 @@ export const bucketMouseEventCallback: ToolMouseEventCallback<BucketTool> = func
     const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
 
     return {
-      endCurrentAction: false,
-      actionStep: {
-        tool: toolConfig,
-        coords: eCoords,
-        state,
+      actionStatus: 'continue',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: eCoords,
+          state,
+        },
+        replacePrevStep: false,
       },
-      replacePrevStep: false,
     };
   }
 
   // Ignore Move events
   if (event.type === 'mousemove') {
-    return null;
+    return {
+      actionStatus: 'continue',
+    };
   }
 
   if (event.type === 'mouseup') {
     if (actionHistory.steps.length < 1) {
-      return null;
+      return {
+        actionStatus: 'cancel',
+      };
     }
 
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
@@ -44,22 +50,26 @@ export const bucketMouseEventCallback: ToolMouseEventCallback<BucketTool> = func
 
     // If the mouse up event happens outside the canvas, invalidate the whole action
     if (event.target !== canvas) {
-      throw Error('Up Event Outside Canvas');
-    } else {
-      const state = 'up';
-
-      const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
-
       return {
-        endCurrentAction: true,
+        actionStatus: 'cancel',
+      };
+    }
+
+    const state = 'up';
+
+    const eCoords = getCanvasCoordsFromEvent(event, canvas, canvasConfig);
+
+    return {
+      actionStatus: 'end',
+      actionUpdate: {
         actionStep: {
           tool: toolConfig,
           coords: eCoords,
           state,
         },
         replacePrevStep: false,
-      };
-    }
+      },
+    };
   }
 
   throw Error(`Bucket: Unhandled Event Type: ${event.type}`);

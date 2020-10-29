@@ -80,10 +80,14 @@ export type ToolActionStepCallback<T extends ToolConfig> = <N extends string>(
   canvasConfig: CanvasConfig,
 ) => void;
 
+type ActionStatus = 'continue' | 'end' | 'cancel';
+
 export type ToolMouseEventCallbackResult<T extends ToolConfig> = {
-  endCurrentAction: boolean,
-  replacePrevStep: boolean,
-  actionStep: CanvasActionStep<T>,
+  actionStatus: ActionStatus,
+  actionUpdate?: { // If not defined and 'actionStatus' is 'continue' or 'end' then no new Action Step is added to the Action
+    replacePrevStep: boolean,
+    actionStep: CanvasActionStep<T>,
+  }
 };
 
 export type ToolMouseEventCallback<T extends ToolConfig> = <N extends string>(
@@ -93,7 +97,7 @@ export type ToolMouseEventCallback<T extends ToolConfig> = <N extends string>(
   canvasConfig: CanvasConfig,
   toolConfig: T,
   actionHistory: CanvasAction<N, T>,
-) => ToolMouseEventCallbackResult<T> | null;
+) => ToolMouseEventCallbackResult<T>;
 
 export class DrawingCanvasController<
   N extends string,
@@ -357,25 +361,32 @@ export class DrawingCanvasController<
     const currentToolConfig = this.toolConfig[this.currentTool];
 
     if (callback && currentToolConfig) {
-      try {
-        const currentActionHistory: CanvasAction<N, M[N]> = this.newActionNextEvent
-          ? { tool: this.currentTool, steps: [] }
-          : this.history.actionsHistory[this.history.actionsHistory.length - 1];
+      const currentActionHistory: CanvasAction<N, M[N]> = this.newActionNextEvent
+        ? { tool: this.currentTool, steps: [] }
+        : this.history.actionsHistory[this.history.actionsHistory.length - 1];
 
-        const res = callback.call(
-          this,
-          e,
-          this.canvasElement,
-          cloneDeep(this.canvasConfig),
-          // Non-null assertion due to currentToolConfig still having undefined in type union
-          // despite non-null if-check above.
-          // TODO: Investigate further (TS bug?)
-          cloneDeep(currentToolConfig!),
-          currentActionHistory,
-        );
+      const res = callback.call(
+        this,
+        e,
+        this.canvasElement,
+        cloneDeep(this.canvasConfig),
+        // Non-null assertion due to currentToolConfig still having undefined in type union
+        // despite non-null if-check above.
+        // TODO: Investigate further (TS bug?)
+        cloneDeep(currentToolConfig!),
+        currentActionHistory,
+      );
 
-        if (res) {
-          if (res.replacePrevStep) {
+      if (res.actionStatus === 'cancel') {
+        if (!this.newActionNextEvent) {
+          this.history.actionsHistory.pop();
+          this.newActionNextEvent = true;
+        }
+      } else {
+        const update = res.actionUpdate;
+
+        if (update) {
+          if (update.replacePrevStep) {
             this.clearCanvas();
             this.performAllCanvasActions(this.history.actionsHistory, true);
 
@@ -384,24 +395,18 @@ export class DrawingCanvasController<
               steps: [...currentActionHistory.steps.slice(0, currentActionHistory.steps.length - 1)],
             };
 
-            this.performCanvasAction(res.actionStep, withoutPrevStep);
+            this.performCanvasAction(update.actionStep, withoutPrevStep);
 
-            this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, true);
+            this.commitNewActionStep(this.newActionNextEvent, this.currentTool, update.actionStep, true);
           } else {
-            this.performCanvasAction(res.actionStep, currentActionHistory);
+            this.performCanvasAction(update.actionStep, currentActionHistory);
 
             // If the action was performed without throwing an error, commit the action to the history
-            this.commitNewActionStep(this.newActionNextEvent, this.currentTool, res.actionStep, false);
+            this.commitNewActionStep(this.newActionNextEvent, this.currentTool, update.actionStep, false);
           }
+        }
 
-          this.newActionNextEvent = res.endCurrentAction;
-        }
-      } catch (err) {
-        // On error, delete the current Action as it likely has an inconsistent state that will continue producing errors
-        if (!this.newActionNextEvent) {
-          this.history.actionsHistory.pop();
-          this.newActionNextEvent = true;
-        }
+        this.newActionNextEvent = res.actionStatus === 'end';
       }
     }
   }

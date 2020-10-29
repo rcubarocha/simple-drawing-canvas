@@ -337,7 +337,8 @@ describe('canvas controller', () => {
 
         test('if tool callback ignores event, no action should be performed', () => {
 
-          mockMouseCB.mockImplementation(() => null);
+          // Response with 'continue' status but no Action Step update ignores the event
+          mockMouseCB.mockImplementation(() => ({ actionStatus: 'continue' }));
   
           const downEvent = new MouseEvent('mousedown', {
             buttons: 1,
@@ -376,38 +377,44 @@ describe('canvas controller', () => {
         test('if tool callback returns a response it should perform the action accordingly', () => {
 
           mockMouseCB.mockImplementationOnce(() => ({
-            endCurrentAction: false,
-            replacePrevStep: false,
-            actionStep: {
-              tool: mockToolConfig,
-              coords: {
-                x: 60,
-                y: 240,
+            actionStatus: 'continue',
+            actionUpdate: {
+              replacePrevStep: false,
+              actionStep: {
+                tool: mockToolConfig,
+                coords: {
+                  x: 60,
+                  y: 240,
+                },
+                state: 'down',
               },
-              state: 'down',
-            }
+            },
           })).mockImplementationOnce(() => ({
-            endCurrentAction: false,
-            replacePrevStep: false,
-            actionStep: {
-              tool: mockToolConfig,
-              coords: {
-                x: 60,
-                y: 240,
+            actionStatus: 'continue',
+            actionUpdate: {
+              replacePrevStep: false,
+              actionStep: {
+                tool: mockToolConfig,
+                coords: {
+                  x: 60,
+                  y: 240,
+                },
+                state: 'move',
               },
-              state: 'move',
-            }
+            },
           })).mockImplementationOnce(() => ({
-            endCurrentAction: true,
-            replacePrevStep: true,
-            actionStep: {
-              tool: mockToolConfig,
-              coords: {
-                x: 60,
-                y: 240,
+            actionStatus: 'end',
+            actionUpdate: {
+              replacePrevStep: true,
+              actionStep: {
+                tool: mockToolConfig,
+                coords: {
+                  x: 60,
+                  y: 240,
+                },
+                state: 'up',
               },
-              state: 'up',
-            }
+            },
           }));
   
           const downEvent = new MouseEvent('mousedown', {

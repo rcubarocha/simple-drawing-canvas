@@ -58,32 +58,37 @@ describe('clear mouse event callback', () => {
     const res = clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [] });
 
     const expected = {
-      endCurrentAction: false,
-      actionStep: {
-        tool: toolConfig,
-        coords: {
-          x: 150,
-          y: 150,
+      actionStatus: 'continue',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: {
+            x: 150,
+            y: 150,
+          },
+          state: 'down',
         },
-        state: 'down',
+        replacePrevStep: false,
       },
-      replacePrevStep: false,
     };
 
-    expect(res).toEqual(expected);
     expect(res).toEqual(expected);
   });
 
   // Mouse Move
 
-  test('mouse move event should always return null', () => {
+  test('mouse move event should always return result to ignore the event', () => {
   
     const me = new window.MouseEvent('mousemove', {
       clientX: 150,
       clientY: 150,
     });
+
+    const expected = {
+      actionStatus: 'continue',
+    };
     
-    expect (clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [] })).toBeNull();
+    expect (clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [] })).toEqual(expected);
 
     const downPrevStep = {
       tool: toolConfig,
@@ -94,19 +99,23 @@ describe('clear mouse event callback', () => {
       state: 'up',
     };
     
-    expect (clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [ downPrevStep ] })).toBeNull();
+    expect (clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [ downPrevStep ] })).toEqual(expected);
   });
 
   // Mouse Up
 
-  test('mouse up event should return null if no action history exists', () => {
+  test('mouse up event should cancel action if no action history exists', () => {
   
     const me = new window.MouseEvent('mouseup', {
       clientX: 150,
       clientY: 150,
     });
+
+    const expected = {
+      actionStatus: 'cancel',
+    };
     
-    expect (clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [] })).toBeNull();
+    expect (clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [] })).toEqual(expected);
   });
 
   test('mouse up event should throw if action history is in inconsistent state', () => {
@@ -133,7 +142,7 @@ describe('clear mouse event callback', () => {
     }).toThrow();
   });
 
-  test('mouse up event should throw if not targeting canvas', () => {
+  test('mouse up event should return result to cancel whole action if not targeting canvas', () => {
   
     const me = new window.MouseEvent('mouseup', {
       clientX: 150,
@@ -148,10 +157,12 @@ describe('clear mouse event callback', () => {
       },
       state: 'down',
     };
+
+    const expected = {
+      actionStatus: 'cancel',
+    }
     
-    expect(() => {
-      clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [ prevDown ] });
-    }).toThrow()
+    expect(clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [ prevDown ] })).toEqual(expected);
   });
 
   test('mouse up event should return correct result with Action Step', () => {
@@ -176,16 +187,18 @@ describe('clear mouse event callback', () => {
     const resPrevDown = clearMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'clear', steps: [ prevDown ] });
 
     const expected = {
-      endCurrentAction: true,
-      actionStep: {
-        tool: toolConfig,
-        coords: {
-          x: 300,
-          y: 300,
+      actionStatus: 'end',
+      actionUpdate: {
+        actionStep: {
+          tool: toolConfig,
+          coords: {
+            x: 300,
+            y: 300,
+          },
+          state: 'up',
         },
-        state: 'up',
+        replacePrevStep: false,
       },
-      replacePrevStep: false,
     };
 
     expect(resPrevDown).toEqual(expected);
