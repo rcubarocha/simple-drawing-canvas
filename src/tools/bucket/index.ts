@@ -36,12 +36,6 @@ export const bucketMouseEventCallback: ToolMouseEventCallback<BucketTool> = func
   }
 
   if (event.type === 'mouseup') {
-    if (actionHistory.steps.length < 1) {
-      return {
-        actionStatus: 'cancel',
-      };
-    }
-
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down') {

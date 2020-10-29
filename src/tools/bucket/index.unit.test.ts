@@ -104,20 +104,6 @@ describe('bucket mouse event callback', () => {
 
   // Mouse Up
 
-  test('mouse up event should cancel action if no action history exists', () => {
-  
-    const me = new window.MouseEvent('mouseup', {
-      clientX: 150,
-      clientY: 150,
-    });
-
-    const expected = {
-      actionStatus: 'cancel',
-    };
-    
-    expect (bucketMouseEventCallback.call(mockController, me, canvas, canvasConfig, toolConfig, { tool: 'bucket', steps: [] })).toEqual(expected);
-  });
-
   test('mouse up event should throw if action history is in inconsistent state', () => {
   
     const me = new window.MouseEvent('mouseup', {

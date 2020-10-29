@@ -357,6 +357,11 @@ export class DrawingCanvasController<
       return;
     }
 
+    // Ignore any move or up events that happen without an ongoing Action
+    if ((e.type === 'mousemove' || e.type === 'mouseup') && this.newActionNextEvent) {
+      return;
+    }
+
     const callback = this.toolMouseEventCallbacks[this.currentTool];
     const currentToolConfig = this.toolConfig[this.currentTool];
 

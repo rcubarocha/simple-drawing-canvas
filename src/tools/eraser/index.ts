@@ -29,12 +29,6 @@ export const eraserMouseEventCallback: ToolMouseEventCallback<EraserTool> = func
   }
 
   if (event.type === 'mousemove') {
-    if (actionHistory.steps.length < 1) {
-      return {
-        actionStatus: 'continue',
-      };
-    }
-
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
@@ -59,12 +53,6 @@ export const eraserMouseEventCallback: ToolMouseEventCallback<EraserTool> = func
   }
 
   if (event.type === 'mouseup') {
-    if (actionHistory.steps.length < 1) {
-      return {
-        actionStatus: 'cancel',
-      };
-    }
-
     const prevToolState = actionHistory.steps[actionHistory.steps.length - 1].state;
 
     if (prevToolState !== 'down' && prevToolState !== 'move') {
