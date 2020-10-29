@@ -110,6 +110,64 @@ describe('canvas controller', () => {
         expect(controller.getCurrentTool()).toEqual('mock');
       });
     });
+    
+    describe('getting and setting tool configurations', () => {
+      beforeEach(() => {
+        controller.addTool('mock', mockMouseCB, mockDrawCB, mockToolConfig);
+      });
+
+      test('getting all tool configurations should return correctly', () => {
+        expect(controller.getToolConfigs()).toEqual({
+          mock: mockToolConfig
+        });
+      });
+
+      test('getting tool configuration for unregistered tool should throw', () => {
+        expect(() => {
+          controller.getToolConfig('some-unregistered-tool' as any)
+        }).toThrowError(UnknownToolError);
+      });
+
+      test('getting tool configuration for registered tool should correctly return the configuration', () => {
+        expect(controller.getToolConfig('mock')).toEqual(mockToolConfig);
+      });
+
+      test('setting all tool configurations should overwrite them correctly', () => {
+        const newConfig = {
+          mock: {
+            mockOpt: 1000,
+          }
+        };
+
+        controller.setToolConfigs(newConfig);
+
+        expect(controller['toolConfig']).not.toEqual({ mock: mockToolConfig });
+        expect(controller['toolConfig']).toEqual(newConfig);
+      });
+
+      test('setting a configuration for an unregistered tool should throw', () => {
+        const newConfig = {
+          mock: {
+            mockOpt: 1000,
+          }
+        };
+
+        expect(() => {
+          controller.setToolConfig('some-unregistered-tool' as any, newConfig);
+        }).toThrow(UnknownToolError);
+      });
+
+      test('setting a configuration for a registered tool should overwrite it correctly', () => {
+        const newConfig = {
+          mockOpt: 1000,
+        };
+
+        controller.setToolConfig('mock', newConfig);
+
+        expect(controller['toolConfig'].mock).not.toEqual(mockToolConfig);
+        expect(controller['toolConfig'].mock).toEqual(newConfig);
+      });
+    });
   
     describe('obtaining data url for canvas', () => {
       let ctx: CanvasRenderingContext2D;

@@ -201,12 +201,24 @@ export class DrawingCanvasController<
     this.toolConfig[toolName] = initialConfig;
   }
 
+  getToolConfig<K extends N>(tool: K): M[K] {
+    if (!(tool in this.toolConfig)) {
+      throw new UnknownToolError(`'${tool}' is not registered as a tool`);
+    }
+
+    return cloneDeep(this.toolConfig[tool]!);
+  }
+
+  getToolConfigs(): { [K in N]?: M[K] } {
+    return cloneDeep(this.toolConfig);
+  }
+
   setToolConfig<K extends N>(tool: K, config: M[K]): void {
     if (!(tool in this.toolConfig)) {
       throw new UnknownToolError(`'${tool}' is not registered as a tool`);
     }
 
-    this.toolConfig[tool] = config;
+    this.toolConfig[tool] = cloneDeep(config);
   }
 
   setToolConfigs(config: { [K in N]?: M[K] }): void {
@@ -216,7 +228,7 @@ export class DrawingCanvasController<
       throw new UnknownToolError(`At least some of [${paramKeys.join(',')}]' are not registered as tools`);
     }
 
-    this.toolConfig = config;
+    this.toolConfig = cloneDeep(config);
   }
 
   private clearCanvas() {
